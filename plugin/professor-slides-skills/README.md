@@ -193,3 +193,7 @@ pres find-image --search QUERY [--pick N --name STEM --into DIR]
 ```bash
 cd node && npm test
 ```
+
+## Licence
+
+MIT — see [LICENSE](../../LICENSE).

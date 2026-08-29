@@ -54,3 +54,7 @@ times, with every slide individually defensible.
 Node 22.6 or later — the plugin runs its TypeScript directly. `pptxgenjs` and
 `sharp` are optional and only `pres render` needs them; LibreOffice is needed
 only for the PDF. Reading and checking a course needs none of the three.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).

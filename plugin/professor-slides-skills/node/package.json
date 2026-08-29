@@ -2,6 +2,7 @@
   "name": "@pres/professor-slides-skills",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Course source resolution, outline checking and deck rendering for the professor-slides-skills plugin. Ported from ProfessorHarness node/ and ProfessorExoskeletonDHS exo/.",
   "bin": {
