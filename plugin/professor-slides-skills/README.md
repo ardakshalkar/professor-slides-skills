@@ -71,7 +71,7 @@ it, no reset in nine slides of new material, beats that do not hand over.
 ## Installing
 
 ```bash
-/plugin marketplace add /path/to/PresentationSkills
+/plugin marketplace add /path/to/professor-slides-skills
 /plugin install professor-slides-skills@professor-exoskeleton
 ```
 

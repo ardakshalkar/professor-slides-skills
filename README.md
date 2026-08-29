@@ -1,4 +1,4 @@
-# PresentationSkills
+# Professor Slides Skills
 
 A standalone Claude Code and Codex plugin that plans a presentation, writes it,
 and renders it — over a course it finds rather than one it assumes.
@@ -10,7 +10,7 @@ layout, `ainar approve` to promote a draft, and `Document` records to carry the
 render contract. A professor who only wants to build a deck cannot use it.
 
 ```bash
-/plugin marketplace add /path/to/PresentationSkills
+/plugin marketplace add /path/to/professor-slides-skills
 /plugin install professor-slides-skills@professor-exoskeleton
 cd plugin/professor-slides-skills/node && npm install
 ```
