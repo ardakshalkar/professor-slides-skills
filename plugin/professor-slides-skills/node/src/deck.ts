@@ -240,14 +240,50 @@ export function creditFor(document: any, src: string): string | null {
 }
 
 /**
+ * How wide one character is, as a fraction of the font size.
+ *
+ * The proportional default is a blend across the body font. Monospace is
+ * genuinely wider — Courier New advances 0.6em for every glyph, narrow ones
+ * included — and using the proportional figure for it under-counts the lines in
+ * a code block, which is how a code block ends up taller than the panel drawn
+ * behind it.
+ */
+export const CHAR_WIDTH = { proportional: 0.45, mono: 0.62 } as const;
+
+/**
+ * How many characters fit on one line of the given width.
+ *
+ * Font sizes are points and there are 72 points to the inch. The version this
+ * was ported from divided by 96 — a pixels-per-inch figure — and compensated
+ * with a character width tuned until the body font looked right. That fitted
+ * one font and silently mis-measured every other, which is how an 18pt
+ * monospace block came to be drawn shorter than the text inside it.
+ *
+ * The widths are deliberately a few per cent above the true advance (Courier
+ * New is exactly 0.6em; Calibri averages about 0.42). Over-estimating costs an
+ * overflow warning nobody needed. Under-estimating prints the next block on top
+ * of this one, and does it invisibly.
+ */
+export const charsPerLine = (width: number, fontSize: number, charWidth: number): number =>
+  Math.max(4, Math.floor((width * 72) / (fontSize * charWidth)));
+
+/**
  * Roughly how tall wrapped text will be, in inches.
  *
  * An estimate, not a measurement: the fonts are rendered by PowerPoint, not
- * here. It only flows blocks down the slide and warns when one runs past the
- * bottom margin, so erring tall is the safe direction.
+ * here. It flows blocks down the slide and warns when one runs past the bottom
+ * margin, so erring tall is the safe direction — an over-estimate costs a
+ * warning nobody needed, an under-estimate costs a slide where two blocks are
+ * printed on top of each other.
  */
-export function textHeight(text: string, fontSize: number, width: number, lineFactor = 1.35): number {
-  const perLine = Math.max(8, Math.floor((width * 96) / (fontSize * 0.52)));
+export function textHeight(
+  text: string,
+  fontSize: number,
+  width: number,
+  lineFactor = 1.35,
+  charWidth: number = CHAR_WIDTH.proportional,
+): number {
+  const perLine = charsPerLine(width, fontSize, charWidth);
   const lines = text
     .split("\n")
     .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / perLine)), 0);
@@ -255,38 +291,117 @@ export function textHeight(text: string, fontSize: number, width: number, lineFa
 }
 
 /**
- * Column widths proportional to the longest cell in each column.
+ * Padding inside a table cell, both sides, in inches.
  *
- * Equal thirds put "Prefer" and "Accuracy misleads because" in the same width,
- * which wraps one and leaves the other half empty. Clamped so a single long
- * cell cannot squeeze its neighbours to nothing.
+ * Generous on purpose. PowerPoint applies its own cell inset on top of whatever
+ * the writer asks for, and a column measured to the exact width of its longest
+ * word comes out one pixel short and breaks the word anyway.
  */
-export function columnWidths(rows: string[][], total: number): number[] {
+const CELL_PADDING = 0.34;
+
+/**
+ * How much wider bold text is than regular, at the same size.
+ *
+ * The header row is bold, and measuring it as regular is how "Language" ends up
+ * as "Languag / e" — the column is sized for the word it holds in a weight it
+ * is not set in.
+ */
+const BOLD_FACTOR = 1.12;
+
+/**
+ * The widest unbreakable word in a column, in inches, with the header row
+ * measured as bold.
+ */
+function widestWord(rows: string[][], column: number, fontSize: number, charWidth: number): number {
+  let widest = fontSize * charWidth; // one character, so a column is never zero
+  rows.forEach((row, index) => {
+    const weight = index === 0 ? BOLD_FACTOR : 1;
+    for (const word of plain(row[column] ?? "").split(/\s+/)) {
+      widest = Math.max(widest, word.length * fontSize * charWidth * weight);
+    }
+  });
+  return widest / 72;
+}
+
+/**
+ * Column widths proportional to the longest cell, but never below what the
+ * column's longest *word* needs.
+ *
+ * Proportional alone is not enough, and the failure is ugly rather than subtle.
+ * Give six columns one 79-character headline and five short ones, and the
+ * headline's weight starves the rest: "Language" comes out as "Langu / age",
+ * broken mid-word, because PowerPoint will break inside a word rather than
+ * overflow the cell. So each column gets a floor it cannot be pushed under, and
+ * only the slack above those floors is shared out by weight.
+ *
+ * If the floors alone exceed the table width there is nothing to be done — the
+ * words do not fit — so they are scaled down together and the caller is left to
+ * notice.
+ */
+export function columnWidths(
+  rows: string[][],
+  total: number,
+  fontSize = 15,
+  charWidth: number = CHAR_WIDTH.proportional,
+): number[] {
   const columns = rows[0]?.length ?? 0;
   if (!columns) return [];
+
+  const floors = new Array(columns).fill(0).map(
+    (_, column) => widestWord(rows, column, fontSize, charWidth) + CELL_PADDING,
+  );
+  const floorSum = floors.reduce((sum, width) => sum + width, 0);
+  if (floorSum >= total) return floors.map((width) => (width / floorSum) * total);
+
   const weights = new Array(columns).fill(0).map((_, column) =>
     Math.max(6, ...rows.map((row) => plain(row[column] ?? "").length)),
   );
-  const floor = total / (columns * 2.5); // no column below 40% of an even share
 
-  // Clamping and then rescaling would push a clamped column back under its
-  // floor, so the short columns are pinned and only the rest share what is left.
+  // Pinning and then rescaling would push a pinned column back under its floor,
+  // so pinned columns are fixed and only the rest share what is left.
   const widths = new Array<number>(columns).fill(0);
   const pinned = new Set<number>();
   for (let pass = 0; pass <= columns; pass += 1) {
     const free = weights.map((_, column) => column).filter((column) => !pinned.has(column));
-    const remaining = total - pinned.size * floor;
+    const remaining = total - [...pinned].reduce((sum, column) => sum + floors[column]!, 0);
     const freeWeight = free.reduce((sum, column) => sum + weights[column]!, 0) || 1;
     let pinnedThisPass = false;
     for (const column of free) {
       widths[column] = (weights[column]! / freeWeight) * remaining;
-      if (widths[column]! < floor) {
+      if (widths[column]! < floors[column]!) {
         pinned.add(column);
         pinnedThisPass = true;
       }
     }
-    for (const column of pinned) widths[column] = floor;
+    for (const column of pinned) widths[column] = floors[column]!;
     if (!pinnedThisPass) break;
   }
   return widths;
+}
+
+/**
+ * How tall each row will actually be once its cells wrap.
+ *
+ * A fixed row height is a lie the moment one cell needs two lines: the table
+ * grows downwards and whatever the renderer placed under it is overprinted.
+ * That is the same class of bug as an under-counted code block, and it is
+ * invisible in the markdown.
+ */
+export function tableRowHeights(
+  rows: string[][],
+  widths: number[],
+  fontSize = 15,
+  charWidth: number = CHAR_WIDTH.proportional,
+  minimum = 0.62,
+): number[] {
+  return rows.map((row) => {
+    const lines = Math.max(
+      1,
+      ...row.map((cell, column) => {
+        const width = (widths[column] ?? 1) - CELL_PADDING;
+        return Math.ceil(plain(cell ?? "").length / charsPerLine(width, fontSize, charWidth));
+      }),
+    );
+    return Math.max(minimum, (lines * fontSize * 1.35) / 72 + CELL_PADDING);
+  });
 }

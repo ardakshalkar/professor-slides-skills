@@ -30,7 +30,7 @@ import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkDeck, errorsIn, describeProblems } from "./check.ts";
-import { columnWidths, plain, textHeight, type Block } from "./deck.ts";
+import { CHAR_WIDTH, columnWidths, plain, tableRowHeights, textHeight, type Block } from "./deck.ts";
 import { creditForFigure, type DeckPlan } from "./plan.ts";
 
 const require = createRequire(import.meta.url);
@@ -141,13 +141,27 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     // references/visual-grammar.md.
     if (!isTitleSlide && (archetype === "question" || archetype === "activity" || archetype === "big_idea")) {
       let y = 1.7;
+      let titled = false;
       for (const block of blocks) {
         if (block.kind === "heading") {
-          const height = textHeight(block.text, 30, CONTENT_W, 1.15);
+          // Same rule as the flowing layout: the first heading is the title at
+          // a fixed position, and a later one is a sub-heading in the flow.
+          // Drawing both at 0.55 prints them on top of each other.
+          if (!titled) {
+            titled = true;
+            const height = textHeight(block.text, 30, CONTENT_W, 1.15);
+            slide.addText(block.text, {
+              x: MARGIN, y: 0.55, w: CONTENT_W, h: height,
+              fontFace: HEAD_FONT, fontSize: 30, bold: true, color: MUTED, margin: 0,
+            });
+            continue;
+          }
+          const height = textHeight(block.text, 22, CONTENT_W - 1.0, 1.2);
           slide.addText(block.text, {
-            x: MARGIN, y: 0.55, w: CONTENT_W, h: height,
-            fontFace: HEAD_FONT, fontSize: 30, bold: true, color: MUTED, margin: 0,
+            x: MARGIN + 0.5, y, w: CONTENT_W - 1.0, h: height,
+            fontFace: HEAD_FONT, fontSize: 22, bold: true, color: PRIMARY, margin: 0,
           });
+          y += height + 0.2;
           continue;
         }
         if (block.kind === "paragraph") {
@@ -200,6 +214,9 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     // start. Without the distinction every full slide reports an overflow of
     // exactly one inter-block gap.
     let bottom = cursor;
+    // Whether this slide has had its title drawn. A slide may carry several
+    // headings; only the first is the title.
+    let titleDrawn = false;
     const advance = (height: number, gap = 0.3): void => {
       bottom = cursor + height;
       cursor = bottom + gap;
@@ -233,16 +250,37 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     for (const block of blocks) {
       switch (block.kind) {
         case "heading": {
+          // Only the first heading is the slide's title. Every later one is a
+          // sub-heading and belongs in the flow.
+          //
+          // Drawing all of them at the title's fixed position is a bug that
+          // does not look like one in the markdown: a slide written with a
+          // `##` title and two `###` sections came out with three titles
+          // printed on top of one another and all three bodies starting at the
+          // same y. Nothing in the source hints at it, and the plan check does
+          // not catch it either, because it compares only the first heading.
+          if (!titleDrawn) {
+            titleDrawn = true;
+            slide.addText(block.text, {
+              x: MARGIN, y: 0.45, w: CONTENT_W, h: 0.8,
+              fontFace: HEAD_FONT, fontSize: 34, bold: true, color: INK, margin: 0,
+            });
+            slide.addShape(pres.ShapeType.line, {
+              x: MARGIN, y: 1.32, w: CONTENT_W, h: 0,
+              line: { color: RULE, width: 1 },
+            });
+            cursor = 1.6;
+            bottom = cursor;
+            break;
+          }
+          const height = textHeight(block.text, 21, CONTENT_W, 1.2);
           slide.addText(block.text, {
-            x: MARGIN, y: 0.45, w: CONTENT_W, h: 0.8,
-            fontFace: HEAD_FONT, fontSize: 34, bold: true, color: INK, margin: 0,
+            x: MARGIN, y: cursor, w: CONTENT_W, h: height,
+            fontFace: HEAD_FONT, fontSize: 21, bold: true, color: PRIMARY, margin: 0,
           });
-          slide.addShape(pres.ShapeType.line, {
-            x: MARGIN, y: 1.32, w: CONTENT_W, h: 0,
-            line: { color: RULE, width: 1 },
-          });
-          cursor = 1.6;
-          bottom = cursor;
+          // A tighter gap than a paragraph's: a sub-heading belongs to the text
+          // under it, and an even gap on both sides makes it belong to neither.
+          advance(height, 0.14);
           break;
         }
 
@@ -271,7 +309,10 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
         }
 
         case "code": {
-          const height = textHeight(block.text, 18, 5.4, 1.4) + 0.4;
+          // Measured with the monospace advance, not the proportional one:
+          // Courier New is wider than the body font, so the proportional figure
+          // under-counts the lines and the text overflows the panel behind it.
+          const height = textHeight(block.text, 18, 5.4, 1.4, CHAR_WIDTH.mono) + 0.4;
           slide.addShape(pres.ShapeType.roundRect, {
             x: MARGIN, y: cursor, w: 6.0, h: height,
             fill: { color: CODE_BG }, line: { color: CODE_LINE }, rectRadius: 0.06,
@@ -332,14 +373,18 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
               row.map((cell) => ({ text: plain(cell), options: { color: INK, fontSize: 15 } })),
             ),
           ];
-          const rowHeight = 0.62;
+          const widths = columnWidths(block.rows, width, 15);
+          // Per row, not one fixed height: a wrapped cell makes the table taller
+          // than a fixed height claims, and everything placed under it is then
+          // overprinted.
+          const heights = tableRowHeights(block.rows, widths, 15);
           slide.addTable(rows, {
             x: MARGIN, y: cursor, w: width,
-            colW: columnWidths(block.rows, width),
+            colW: widths,
             fontFace: BODY_FONT, border: { type: "solid", color: CODE_LINE, pt: 1 },
-            rowH: rowHeight, valign: "middle", margin: 0.12, fill: { color: PAPER },
+            rowH: heights, valign: "middle", margin: 0.12, fill: { color: PAPER },
           });
-          advance(rows.length * rowHeight, 0.35);
+          advance(heights.reduce((sum, height) => sum + height, 0), 0.35);
           break;
         }
 
@@ -352,7 +397,17 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
           // The SVG is the committed source; the PNG is a render, and it goes
           // to output/ with the deck rather than back beside the markdown.
           const placedW = Math.min(CONTENT_W * 0.75, 8.6);
-          const png = join(context.outDir, `${context.name}-${block.src.replace(/\.[^.]+$/, "")}.png`);
+          // Figures are already named after their deck, so prefixing the deck
+          // name again produced `MODULE-06-slides-MODULE-06-slides-fig-01-…`.
+          // Not merely ugly: Windows still caps a path at 260 characters by
+          // default, and a course kept somewhere with a long path lost the
+          // render entirely, with an error from the image library that named
+          // neither the deck nor the cause.
+          const stem = block.src.replace(/\.[^.]+$/, "");
+          const png = join(
+            context.outDir,
+            `${stem.startsWith(context.name) ? stem : `${context.name}-${stem}`}.png`,
+          );
           const credit = creditForFigure(figures[block.src], block.src);
           const creditH = credit ? 0.3 : 0;
           const meta = await sharp(source)
