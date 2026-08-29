@@ -1,4 +1,4 @@
-# Presentation Skills
+# Professor Slides Skills
 
 Three skills that plan a presentation, write it, and render it — over a course
 found rather than assumed.
