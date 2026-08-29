@@ -1,17 +1,18 @@
 @echo off
 rem The `pres` CLI for Windows shells that are not Git Bash.
-rem See the sibling `pres` script for the reasoning.
+rem See the sibling `pres` script for the reasoning; how TypeScript actually
+rem gets run is node\bin\pres.mjs's problem, not this file's.
 
 setlocal
-set "ENTRY=%~dp0..\node\bin\pres.ts"
+set "ENTRY=%~dp0..\node\bin\pres.mjs"
 
 if not "%PRES_NODE%"=="" (
-    "%PRES_NODE%" --experimental-strip-types --no-warnings "%ENTRY%" %*
+    "%PRES_NODE%" "%ENTRY%" %*
     exit /b %errorlevel%
 )
 
 where node >nul 2>&1 && (
-    node --experimental-strip-types --no-warnings "%ENTRY%" %*
+    node "%ENTRY%" %*
     exit /b %errorlevel%
 )
 

@@ -2,36 +2,35 @@
 # The `pres` CLI, run by whichever Node this machine happens to have.
 #
 # Claude Code puts this directory on the Bash tool's PATH while the plugin is
-# enabled, so skills can say `pres source` instead of a path to a .ts file and a
+# enabled, so skills can say `pres source` instead of a path to a script and a
 # flag — which is the difference between a skill that works on a colleague's
 # laptop and one that does not.
 #
-# Node 22.6+ runs TypeScript directly with --experimental-strip-types; 23.6+
-# needs no flag at all but accepts it. Set PRES_NODE to force an interpreter.
+# How TypeScript actually gets run is `node/bin/pres.mjs`'s problem, not this
+# script's. Node needs a different invocation on 22.6–22.17 than on 22.18+, and
+# two shims each carrying their own copy of that knowledge is two shims to fix
+# when it changes again. Set PRES_NODE to force an interpreter.
 
 here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-entry="$here/../node/bin/pres.ts"
+entry="$here/../node/bin/pres.mjs"
 
 for candidate in "$PRES_NODE" node nodejs; do
     [ -z "$candidate" ] && continue
     command -v "$candidate" >/dev/null 2>&1 || continue
-    major=$("$candidate" -p "process.versions.node.split('.')[0]" 2>/dev/null) || continue
-    [ -n "$major" ] || continue
-    if [ "$major" -ge 22 ]; then
-        exec "$candidate" --experimental-strip-types --no-warnings "$entry" "$@"
-    fi
+    exec "$candidate" "$entry" "$@"
 done
 
 cat >&2 <<'MESSAGE'
-pres: no Node 22.6 or later on PATH.
+pres: no Node on PATH.
 
-This plugin runs its TypeScript directly, which needs Node 22.6+
-(--experimental-strip-types). Install a current Node, or point PRES_NODE at one:
+This plugin runs its TypeScript directly, which needs Node 22.6 or later
+(22.18 and later need no flag at all). Install a current Node, or point
+PRES_NODE at one:
 
     PRES_NODE=/path/to/node pres source --course CSS-4008
 
 The first run also needs its dependencies:
 
-    cd "$(dirname "$0")/../node" && npm install
+    cd node && npm install
 MESSAGE
 exit 127

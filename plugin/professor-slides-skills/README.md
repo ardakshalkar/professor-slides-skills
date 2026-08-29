@@ -70,8 +70,14 @@ it, no reset in nine slides of new material, beats that do not hand over.
 
 ## Installing
 
+**As a plugin** — the route that needs no other setup. From an interactive
+Claude Code session (terminal, desktop app, IDE or web):
+
 ```bash
 /plugin marketplace add /path/to/professor-slides-skills
+```
+
+```bash
 /plugin install professor-slides-skills@professor-exoskeleton
 ```
 
@@ -80,6 +86,28 @@ Then, once:
 ```bash
 cd plugin/professor-slides-skills/node && npm install
 ```
+
+The plugin loader puts `bin/` on PATH, so the skills' `pres …` commands resolve,
+and it sets `${CLAUDE_PLUGIN_ROOT}` so they can find `references/` and `beats/`.
+
+**As loose skills**, if you would rather not use the marketplace: copy
+`skills/outline-presentation`, `skills/build-presentation` and
+`skills/render-presentation` into `~/.claude/skills/`. Two things the loader
+would have done for you have to be done by hand.
+
+Put `pres` on PATH:
+
+```bash
+cd plugin/professor-slides-skills/node && npm install && npm link
+```
+
+That gives you a global `pres` that works from any directory and does not depend
+on the plugin being enabled. And keep this directory where the skills can reach
+it — they read `references/` and `beats/` from the plugin root, and say so at
+the top of each `SKILL.md` for the case where `${CLAUDE_PLUGIN_ROOT}` is unset.
+
+**Not** in the claude.ai side of the desktop app. That installs MCPB extensions
+and this is a skills-and-CLI plugin, with no MCP server in it.
 
 `pptxgenjs` and `sharp` are optional dependencies — reading and checking a
 course never needs a native image library, and a machine where they fail to

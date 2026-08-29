@@ -5,10 +5,10 @@
   "type": "module",
   "description": "Course source resolution, outline checking and deck rendering for the professor-slides-skills plugin. Ported from ProfessorHarness node/ and ProfessorExoskeletonDHS exo/.",
   "bin": {
-    "pres": "bin/pres.ts"
+    "pres": "bin/pres.mjs"
   },
   "scripts": {
-    "pres": "node --experimental-strip-types bin/pres.ts",
+    "pres": "node bin/pres.mjs",
     "test": "node --experimental-strip-types --test \"test/*.test.ts\""
   },
   "dependencies": {

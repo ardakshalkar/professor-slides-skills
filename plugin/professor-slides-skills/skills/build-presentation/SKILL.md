@@ -12,6 +12,12 @@ writes: drafts
 **Needs:** an approved outline from `/outline-presentation`, and the course it
 was built against.
 
+**Where the paths below point.** They are written from `${CLAUDE_PLUGIN_ROOT}`,
+the plugin's own directory, which Claude Code sets when the plugin is installed.
+If that variable is empty — the skills were copied into `~/.claude/skills/`
+rather than installed — the same files sit at the root of the
+`professor-slides-skills` directory this skill came from.
+
 You write the slides the outline planned. You do not re-plan the session: the
 outline is what was agreed to, and a deck that quietly reorders it is a deck
 nobody approved.
@@ -76,14 +82,14 @@ mismatch rather than reordering anything to agree.
 The outline's `purpose` and `minutes` become the speaker notes at render time,
 so they do not go on the slide.
 
-`examples/MODULE-06/` in this plugin is a complete worked set — outline, deck,
+`${CLAUDE_PLUGIN_ROOT}/examples/MODULE-06/` in this plugin is a complete worked set — outline, deck,
 figure and plan. Read it before writing your first one.
 
 ### Write each slide as its archetype
 
 The outline gave every slide an `intent` and an `archetype`. The archetype is
 not decoration on the plan — it says what the slide is allowed to contain, and
-`pres check` reads it. `references/visual-grammar.md` has all eighteen; these
+`pres check` reads it. `${CLAUDE_PLUGIN_ROOT}/references/visual-grammar.md` has all eighteen; these
 are the ones most often got wrong.
 
 | The outline says | Write |
@@ -127,7 +133,7 @@ What good slides do:
 
 ## 4. Make the pictures
 
-Read `references/presentation-graphics.md` before adding the first one. The
+Read `${CLAUDE_PLUGIN_ROOT}/references/presentation-graphics.md` before adding the first one. The
 short version, which is the part most often got wrong:
 
 - **A diagram you draw** — hand-authored SVG, from structure the course already

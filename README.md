@@ -15,6 +15,11 @@ render contract. A professor who only wants to build a deck cannot use it.
 cd plugin/professor-slides-skills/node && npm install
 ```
 
+Or, without the marketplace: copy the three folders in
+`plugin/professor-slides-skills/skills/` into `~/.claude/skills/`, and
+`npm link` in `node/` to get a global `pres`. Either route is documented in
+[the plugin's README](plugin/professor-slides-skills/README.md).
+
 Everything else — the three skills, the `pres` CLI, where the course comes
 from, and what is enforced rather than trusted — is in
 [the plugin's README](plugin/professor-slides-skills/README.md).

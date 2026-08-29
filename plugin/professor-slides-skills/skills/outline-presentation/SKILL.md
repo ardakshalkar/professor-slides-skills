@@ -10,7 +10,13 @@ writes: drafts
 # Outline a presentation
 
 **Needs:** a course, from any of the three places `pres source` looks. Works
-with no course at all — see `references/working-without-a-course.md`.
+with no course at all — see `${CLAUDE_PLUGIN_ROOT}/references/working-without-a-course.md`.
+
+**Where the paths below point.** They are written from `${CLAUDE_PLUGIN_ROOT}`,
+the plugin's own directory, which Claude Code sets when the plugin is installed.
+If that variable is empty — the skills were copied into `~/.claude/skills/`
+rather than installed — the same files sit at the root of the
+`professor-slides-skills` directory this skill came from.
 
 You plan the session. You do not write it, and you do not decide what the course
 teaches. If the session you would need to plan requires a concept or outcome the
@@ -30,7 +36,7 @@ pres source --course CSS-4008
 Read the provenance line and carry it into your report. A deck built from a
 course directory while the professor believed they were working against the
 shared database is a deck built from the wrong term's outcomes, and it looks
-identical to a correct one. `references/course-source.md` has the resolution
+identical to a correct one. `${CLAUDE_PLUGIN_ROOT}/references/course-source.md` has the resolution
 order and what each failure means.
 
 Then bound the session:
@@ -53,7 +59,7 @@ that day.
 
 ## 2. Settle the goal, and ask only what changes the plan
 
-Resolve preferences in order: the plugin's `preferences/defaults.yaml`,
+Resolve preferences in order: `${CLAUDE_PLUGIN_ROOT}/preferences/defaults.yaml`,
 `.pres/preferences.yaml`, a course `preferences.yaml`, then what the professor
 just said. Say which defaults you took.
 
@@ -90,7 +96,7 @@ second case say so rather than implying the survey happened.
 
 ## 4. Choose the deck grammar
 
-`references/deck-grammars.md`. Three decisions, all of which go in the outline:
+`${CLAUDE_PLUGIN_ROOT}/references/deck-grammars.md`. Three decisions, all of which go in the outline:
 
 - **`deck_archetype`** — `conceptual_lecture`, `technical_lecture`, `seminar`,
   `workshop`, `case_session`, `course_intro`, `revision`. A course
@@ -106,7 +112,7 @@ second case say so rather than implying the survey happened.
 
 ## 5. Write the arc
 
-Before any beat. `references/outline-craft.md` is the craft.
+Before any beat. `${CLAUDE_PLUGIN_ROOT}/references/outline-craft.md` is the craft.
 
 ```yaml
 arc:
@@ -121,7 +127,7 @@ not yet have a point. Say so instead of producing slides.
 
 ## 6. Choose the beats
 
-`references/teaching-beats.md` for how to choose; `beats/` for the library; read
+`${CLAUDE_PLUGIN_ROOT}/references/teaching-beats.md` for how to choose; `${CLAUDE_PLUGIN_ROOT}/beats/` for the library; read
 the files for the beats you pick and no others.
 
 A **teaching beat** is two to seven slides that do one teaching job. A section is
@@ -183,7 +189,7 @@ slides:
     required_visual: annotated train / validation / test split
 ```
 
-`references/visual-grammar.md` has the eighteen archetypes and the rules that
+`${CLAUDE_PLUGIN_ROOT}/references/visual-grammar.md` has the eighteen archetypes and the rules that
 matter most:
 
 - **A photograph is evidence; a diagram is the explanation.** Text beside a
