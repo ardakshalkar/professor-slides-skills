@@ -11,22 +11,22 @@ render contract. A professor who only wants to build a deck cannot use it.
 
 ```bash
 /plugin marketplace add /path/to/PresentationSkills
-/plugin install presentation-skills
-cd plugin/presentation-skills/node && npm install
+/plugin install professor-slides-skills@professor-exoskeleton
+cd plugin/professor-slides-skills/node && npm install
 ```
 
 Everything else — the three skills, the `pres` CLI, where the course comes
 from, and what is enforced rather than trusted — is in
-[the plugin's README](plugin/presentation-skills/README.md).
-[`RULES.md`](plugin/presentation-skills/RULES.md) has the reasoning behind each
-refusal, and [`examples/`](plugin/presentation-skills/examples) has one complete
+[the plugin's README](plugin/professor-slides-skills/README.md).
+[`RULES.md`](plugin/professor-slides-skills/RULES.md) has the reasoning behind each
+refusal, and [`examples/`](plugin/professor-slides-skills/examples) has one complete
 worked set: an outline, a deck, a figure and the plan that ties them together.
 
 ## Layout
 
 ```text
 .claude-plugin/marketplace.json          install from this repository
-plugin/presentation-skills/
+plugin/professor-slides-skills/
   skills/                                the three skills, with their templates
   beats/                                 29 teaching beats — the planning unit
   references/                            deck grammars, teaching beats, visual

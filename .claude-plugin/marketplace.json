@@ -1,12 +1,12 @@
 {
-  "name": "presentation-skills",
+  "name": "professor-exoskeleton",
   "owner": {
     "name": "Ardak Shalkarbayuly"
   },
   "plugins": [
     {
-      "name": "presentation-skills",
-      "source": "./plugin/presentation-skills",
+      "name": "professor-slides-skills",
+      "source": "./plugin/professor-slides-skills",
       "description": "Outline, build and render course presentations from a Supabase course database, a YAML course directory, or a single flat course file.",
       "version": "0.1.0",
       "author": {

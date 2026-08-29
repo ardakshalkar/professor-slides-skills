@@ -13,7 +13,7 @@
 # question and costs a rebuild.
 
 version: 1
-profile_id: presentation-skills-defaults
+profile_id: professor-slides-defaults
 scope: system
 
 values:

@@ -1,9 +1,9 @@
 {
-  "name": "@pres/presentation-skills",
+  "name": "@pres/professor-slides-skills",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Course source resolution, outline checking and deck rendering for the presentation-skills plugin. Ported from ProfessorHarness node/ and ProfessorExoskeletonDHS exo/.",
+  "description": "Course source resolution, outline checking and deck rendering for the professor-slides-skills plugin. Ported from ProfessorHarness node/ and ProfessorExoskeletonDHS exo/.",
   "bin": {
     "pres": "bin/pres.ts"
   },

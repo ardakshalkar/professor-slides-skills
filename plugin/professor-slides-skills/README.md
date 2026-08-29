@@ -72,13 +72,13 @@ it, no reset in nine slides of new material, beats that do not hand over.
 
 ```bash
 /plugin marketplace add /path/to/PresentationSkills
-/plugin install presentation-skills
+/plugin install professor-slides-skills@professor-exoskeleton
 ```
 
 Then, once:
 
 ```bash
-cd plugin/presentation-skills/node && npm install
+cd plugin/professor-slides-skills/node && npm install
 ```
 
 `pptxgenjs` and `sharp` are optional dependencies — reading and checking a
