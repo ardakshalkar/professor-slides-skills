@@ -3,6 +3,11 @@
 Reference material for `/outline-presentation`. The skill says to write the arc
 before the slides; this is why, and what a good one looks like.
 
+The arc is one layer of the plan, not the whole of it. Underneath it sit the
+beats (`teaching-beats.md`), and underneath those the per-slide grammar
+(`visual-grammar.md`). The arc is what the session *argues*; the beats are how
+that argument is built.
+
 ## The failure this exists to prevent
 
 Ask for a lecture on model evaluation and you get, reliably, eight slides:

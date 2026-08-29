@@ -32,10 +32,15 @@ max_slides: "{{ from the outline }}"
 slides:
   - number: 1
     title: "{{ exactly the outline's title, and exactly the markdown's heading }}"
+    # Carried across from the outline. The renderer reads it: a question, an
+    # activity or a big idea is set large and left with its whitespace rather
+    # than flowed like body copy.
+    archetype: "{{ from the outline }}"
     minutes: 8
     purpose: "{{ what this slide has to do }}"
   - number: 2
     title: "{{ … }}"
+    archetype: "{{ … }}"
     minutes: 12
     purpose: "{{ … }}"
     # Carried over from the outline. `pres check` warns if the slide has no

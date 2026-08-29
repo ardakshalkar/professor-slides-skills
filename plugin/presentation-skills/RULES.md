@@ -70,6 +70,46 @@ And the plan is a contract, not a suggestion. When it stops matching the deck,
 one of the two was edited after the other, and which is wrong is the
 professor's question. Nothing here reorders slides to make them agree.
 
+## The teaching decides the shape, not a layout rota
+
+The failure this plugin is built against is not an ugly deck. It is *title and
+three bullets, fifteen times* — a deck where every slide is individually
+defensible and the cognitive operation never changed while the material did.
+
+The fix is not a rule against repeating a layout; that rule is actively harmful,
+because repeating a shape is exactly right while the learner's task is the same.
+The fix is to name the task separately from the representation, so that the
+variation follows from the teaching:
+
+> Not "make slide 4 look different." **"Slide 4 has a different pedagogical
+> job."**
+
+Which is why planning runs deck grammar → teaching beat → slide intent → visual
+archetype, and why a beat has to say what is true for the learner when it ends.
+A beat with no `exit_understanding` cannot tell whether its slides are the right
+ones, and neither can anybody reading it.
+
+## Some slides are supposed to look empty
+
+Three cases where a generator's instinct is exactly wrong, and where the check
+therefore refuses rather than suggests:
+
+- **A question slide.** The whitespace and the missing answer are the
+  instructional function. An `explanation` or `takeaway` role there is an
+  error — the only grammar violation in the plugin that is.
+- **A photograph.** Text beside evidence directs attention; it does not
+  describe what the room can already see. Three sentences saying what three
+  maps depict is three sentences of duplicated slide.
+- **A slide that needs the professor.** `delivery_dependency: high` says the
+  interpretation is spoken, which is normal university teaching. Filling it in
+  is not a favour.
+
+And one that is wrong in the other direction: **text-only slides are
+legitimate**. The rule is never *every slide needs an image*, it is *every
+slide needs an information carrier*, and sometimes the carrier is prose. A long
+primary source being analysed is not a wall of text; a long generated
+explanation is.
+
 ## A picture is read as evidence even when the sentence beside it hedges
 
 Which is why the five kinds of graphic are told apart by where their authority

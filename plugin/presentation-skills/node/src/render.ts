@@ -123,11 +123,77 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     return [minutes, spec.purpose].filter(Boolean).join(" — ") || null;
   };
 
+  /** The archetype the plan gave this slide, if any. */
+  const archetypeOf = (index: number): string | undefined =>
+    context.plan.slides?.find((slide) => slide.number === index + 1)?.archetype;
+
   for (const [index, blocks] of slides.entries()) {
     const heading = blocks.find((block) => block.kind === "heading");
     const isTitleSlide = index === 0 && heading?.kind === "heading" && heading.level === 1;
+    const archetype = archetypeOf(index);
     const slide = pres.addSlide();
     slide.background = { color: isTitleSlide ? INK : PAPER };
+
+    // Two archetypes whose layout *is* the teaching, so they are not flowed
+    // like body copy. A question set in 17pt at the top of an otherwise empty
+    // slide reads as an aside; the same words large and alone read as something
+    // the room is expected to answer. The whitespace is deliberate — see
+    // references/visual-grammar.md.
+    if (!isTitleSlide && (archetype === "question" || archetype === "activity" || archetype === "big_idea")) {
+      let y = 1.7;
+      for (const block of blocks) {
+        if (block.kind === "heading") {
+          const height = textHeight(block.text, 30, CONTENT_W, 1.15);
+          slide.addText(block.text, {
+            x: MARGIN, y: 0.55, w: CONTENT_W, h: height,
+            fontFace: HEAD_FONT, fontSize: 30, bold: true, color: MUTED, margin: 0,
+          });
+          continue;
+        }
+        if (block.kind === "paragraph") {
+          const height = textHeight(block.text, 30, CONTENT_W - 1.0, 1.25);
+          slide.addText(runs(block.text, { color: INK }), {
+            x: MARGIN + 0.5, y, w: CONTENT_W - 1.0, h: height,
+            fontFace: HEAD_FONT, fontSize: 30, lineSpacingMultiple: 1.25, margin: 0,
+          });
+          y += height + 0.45;
+          continue;
+        }
+        if (block.kind === "list") {
+          // Options on a poll: readable, evenly spaced, and nothing else on the
+          // slide competing with them.
+          const height = block.items.reduce(
+            (total, item) => total + textHeight(item, 22, CONTENT_W - 1.4) + 0.3, 0,
+          );
+          slide.addText(
+            block.items.map((item, position) => ({
+              text: plain(item),
+              options: {
+                color: INK,
+                bullet: block.ordered ? { type: "number", startAt: position + 1 } : true,
+                breakLine: position < block.items.length - 1,
+              },
+            })),
+            {
+              x: MARGIN + 0.7, y, w: CONTENT_W - 1.4, h: height,
+              fontFace: BODY_FONT, fontSize: 22, margin: 0, paraSpaceAfter: 16,
+            },
+          );
+          y += height + 0.35;
+          continue;
+        }
+        warnings.push(
+          `slide ${index + 1} is a '${archetype}' slide and contains a ${block.kind} block, ` +
+          "which this archetype does not carry; it was left off",
+        );
+      }
+      if (y > FLOOR) {
+        warnings.push(`slide ${index + 1} runs to ${y.toFixed(2)}" of ${FLOOR}" — shorten it`);
+      }
+      const note = noteFor(index);
+      if (note) slide.addNotes(note);
+      continue;
+    }
 
     let cursor = 1.6;
     // Where the last block actually ends, as against where the next one would

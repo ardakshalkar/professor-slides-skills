@@ -28,7 +28,9 @@ worked set: an outline, a deck, a figure and the plan that ties them together.
 .claude-plugin/marketplace.json          install from this repository
 plugin/presentation-skills/
   skills/                                the three skills, with their templates
-  references/                            course sources, outline craft, figures
+  beats/                                 29 teaching beats — the planning unit
+  references/                            deck grammars, teaching beats, visual
+                                         grammar, course sources, figures
   preferences/defaults.yaml              what a deck looks like when nobody said
   examples/MODULE-06/                    a complete worked set
   node/                                  the `pres` CLI and its tests
@@ -36,6 +38,11 @@ plugin/presentation-skills/
 work/                                    drafts (gitignored)
 output/                                  renders (gitignored)
 ```
+
+Planning runs down three taxonomies rather than jumping from a section to a list
+of slides — **deck grammar → teaching beat → slide intent → visual archetype** —
+because a generator that skips that produces *title and three bullets*, fifteen
+times, with every slide individually defensible.
 
 ## Requirements
 

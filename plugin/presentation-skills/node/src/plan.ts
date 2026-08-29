@@ -22,20 +22,61 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { parse as parseYaml } from "yaml";
+import { DECK_ARCHETYPES, OUTPUT_MODES } from "./archetypes.ts";
 import type { ModuleContext } from "./context.ts";
+import { critiqueDeck } from "./critique.ts";
 import type { Plan, PlannedSlide } from "./deck.ts";
 
 export const APPROVED = "approved";
 export const DRAFT = "draft";
 
 export interface OutlineSlide extends PlannedSlide {
+  /** Free-text kind, kept for readability. `intent` and `archetype` are checked. */
   type?: string;
+  /** What the learner is doing here. See `archetypes.ts`. */
+  intent?: string;
+  /** How that information is represented. One of the eighteen. */
+  archetype?: string;
+  /** What each piece of text on the slide is doing. */
+  text_roles?: string[];
+  density?: string;
   outcomes?: string[];
   concepts?: string[];
   /** A picture the slide needs; the build step must produce it or say why not. */
   required_visual?: string;
+  /**
+   * A visual reused across several slides, named so the deck can highlight
+   * parts of it rather than drawing a new picture each time.
+   */
+  visual_anchor?: string;
+  /** Which part of the anchor this slide brings forward. */
+  focus?: string;
+  /** `high` means the slide is deliberately incomplete without the professor. */
+  delivery_dependency?: string;
   /** Resource identifiers this slide is grounded in. */
   sources?: string[];
+}
+
+/**
+ * A teaching beat: two to seven slides that do one teaching job.
+ *
+ * The unit that was missing. A section planned as a list of slides produces
+ * slides that are individually reasonable and collectively inert; a section
+ * planned as beats has to say what each stretch of it accomplishes, and the
+ * slide shapes then follow from that rather than from a layout rota.
+ */
+export interface Beat {
+  /** The beat's identifier in `beats/`, when it came from the library. */
+  beat?: string;
+  goal?: string;
+  /** What the room is wondering when the beat starts. */
+  entry_question?: string;
+  /** What is true for the learner when it ends. */
+  exit_understanding?: string;
+  /** The question that hands over to the next beat. */
+  transition_question?: string;
+  /** Slide numbers this beat covers, in order. */
+  slides?: number[];
 }
 
 export interface Arc {
@@ -61,8 +102,16 @@ export interface Outline {
     language?: string;
     duration_minutes?: number;
     max_slides?: number;
+    /** conceptual_lecture, technical_lecture, seminar, workshop, course_intro … */
+    deck_archetype?: string;
+    /** teaching, handout or hybrid — they are different artefacts. */
+    output_mode?: string;
+    /** Which representation ladder applies. See `references/deck-grammars.md`. */
+    discipline?: string;
   };
   arc?: Arc;
+  /** The session as teaching jobs, each covering a stretch of the slides. */
+  beats?: Beat[];
   outcomes?: string[];
   concepts?: string[];
   slides: OutlineSlide[];
@@ -160,6 +209,23 @@ export function checkOutline(outline: Outline, context?: ModuleContext | null): 
   const slides = outline.slides ?? [];
 
   if (!slides.length) problems.push(error("the outline has no slides"));
+
+  // The visual grammar and the deck read as a sequence. Kept in `critique.ts`
+  // because it answers a different question — not "is this outline sound" but
+  // "does this sequence teach" — and because every finding there is a strong
+  // default about teaching rather than a fact about the course.
+  problems.push(...critiqueDeck(outline));
+
+  const deckArchetype = outline.presentation?.deck_archetype;
+  if (deckArchetype && !(DECK_ARCHETYPES as readonly string[]).includes(deckArchetype)) {
+    problems.push(warning(
+      `'${deckArchetype}' is not a deck archetype (${DECK_ARCHETYPES.join(", ")})`,
+    ));
+  }
+  const outputMode = outline.presentation?.output_mode;
+  if (outputMode && !(OUTPUT_MODES as readonly string[]).includes(outputMode)) {
+    problems.push(warning(`'${outputMode}' is not an output mode (${OUTPUT_MODES.join(", ")})`));
+  }
 
   // Numbering: unique and contiguous from 1, because the plan's numbers are how
   // a render failure names the slide that is wrong.

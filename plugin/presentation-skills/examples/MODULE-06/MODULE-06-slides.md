@@ -24,17 +24,11 @@ MODULE-06 · CSS-4008 2026-FALL · 5 October
 
 ## The number that meant nothing
 
-Last week's report ended with a figure. Most of them were around 0.97.
+Last week's report ended with a figure, and most of them were around 0.97 — every
+one of them measured on the same rows the model had just been fitted to.
 
-That figure was measured on the same rows the model was fitted to. It answers
-the question *did the model memorise this data* — which it did, because that is
-what fitting does.
-
-- The question we wanted answered: will this work on rows it has not seen
-- The question we answered: did it learn these rows
-- These are different questions, and only one of them is useful
-
-`CONCEPT-MODEL-EVALUATION`
+A score on the data you fitted to answers *did this model memorise these rows*.
+It did. That is what fitting is.
 
 ---
 

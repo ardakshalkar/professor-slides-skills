@@ -12,13 +12,61 @@ render contract. This installs on its own.
 
 | | |
 | --- | --- |
-| `/outline-presentation` | Find the course. Work out how the topics evolve across the session. Draft the arc, the slide sequence, and an honest statement of which outcomes and concepts each slide serves and what is deliberately left out. Hand it to the professor. |
-| `/build-presentation` | Fill an **approved** outline in: slides as Marp markdown, diagrams as SVG you also commit, tables from the source material, openly-licensed images with their attribution attached, and a written prompt for any illustration the professor must generate. |
+| `/outline-presentation` | Find the course. Choose the teaching sequence the discipline calls for. Draft the arc, the beats, and a slide list saying what the learner is doing on each one and how the information is represented — plus an honest statement of what is deliberately left out. Hand it to the professor. |
+| `/build-presentation` | Fill an **approved** outline in: slides as Marp markdown written as their archetypes, diagrams as SVG you also commit, tables from the source material, openly-licensed images with their attribution attached, and a written prompt for any illustration the professor must generate. |
 | `/render-presentation` | The `.pptx` with real editable shapes and speaker notes, and the PDF converted from that same deck. |
 
 Outlining is separate on purpose. Going from module to finished markdown in one
 pass means the professor first sees the argument of the lecture when it is
 already written, and by then changing it costs twenty-four slides.
+
+## The planning layer
+
+Ask a generator for a lecture and it produces *title and three bullets*, fifteen
+times. Every one of those slides is individually defensible; what is wrong is
+that the cognitive operation never changed while the material did.
+
+So the planning runs down three separate taxonomies rather than jumping from a
+section to a list of slides:
+
+```text
+DECK GRAMMAR        what sequence teaches this topic     references/deck-grammars.md
+      ↓
+TEACHING BEAT       what job does this stretch do        references/teaching-beats.md · beats/
+      ↓
+SLIDE INTENT        what is the learner doing here
+      ↓
+VISUAL ARCHETYPE    how should that be represented       references/visual-grammar.md
+```
+
+A **teaching beat** is two to seven slides that do one teaching job —
+`problem-before-solution`, `follow-one-object`, `predict-reveal-explain`,
+`analyze-artifact`. Twenty-nine of them live in [`beats/`](beats/README.md),
+each with the sequence it implies, the rules its pictures follow, and the
+question worth asking the professor before using it.
+
+Eighteen **visual archetypes** say how one slide is shaped, and they are
+enforced, not suggested. Some of what falls out of that:
+
+- **A photograph is evidence; a diagram is the explanation.** Text beside a
+  photograph directs attention rather than describing what the room can see.
+  Labels on a diagram sit on the parts they name — never a diagram followed by
+  "Box A means…, Box B means…".
+- **Whitespace on a question slide is the teaching**, and so is the missing
+  answer. That one is an error, not a warning.
+- **Reuse the visual anchor.** One diagram with the emphasis moving beats five
+  unrelated diagrams; the student otherwise spends each slide re-learning a
+  layout instead of learning the addition.
+- **Text-only slides are legitimate.** Never *every slide needs an image*;
+  always *every slide needs an information carrier*.
+- **Density is a mode**, not a word cap — a derivation is dense because the
+  content is.
+- **`delivery_dependency: high`** marks a slide deliberately incomplete without
+  the professor talking over it. Normal teaching; a hole in a handout.
+
+`pres outline check` also reads the deck as a sequence: identical archetypes in
+a row, text-only runs, a mechanism arriving before anything creates the need for
+it, no reset in nine slides of new material, beats that do not hand over.
 
 ## Installing
 
@@ -106,6 +154,9 @@ pres find-image --search QUERY [--pick N --name STEM --into DIR]
 - Any slide running past the bottom margin is named.
 - An outline may not cover a concept its module does not claim, and may not drop
   one it does without recording why.
+- A question or activity slide may not carry an explanation or a takeaway. The
+  missing answer is the point.
+- Every slide's archetype has to be one of the eighteen.
 
 `RULES.md` has the reasoning behind each.
 

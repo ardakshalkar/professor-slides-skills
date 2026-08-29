@@ -79,6 +79,33 @@ so they do not go on the slide.
 `examples/MODULE-06/` in this plugin is a complete worked set — outline, deck,
 figure and plan. Read it before writing your first one.
 
+### Write each slide as its archetype
+
+The outline gave every slide an `intent` and an `archetype`. The archetype is
+not decoration on the plan — it says what the slide is allowed to contain, and
+`pres check` reads it. `references/visual-grammar.md` has all eighteen; these
+are the ones most often got wrong.
+
+| The outline says | Write |
+| --- | --- |
+| `question`, `activity` | the question, and nothing else. **No answer, no explanation** — the whitespace and the missing answer are the teaching, and this is an error rather than a warning |
+| `single_visual` | the picture, its identification and what to notice. Not a description of what the room can already see |
+| `annotated_object`, `system_diagram`, `process` | the diagram *is* the explanation. Labels on the parts they name — never a diagram followed by "Box A means…, Box B means…" |
+| `visual_comparison` | two to four visuals at equal weight, parallel labels, same crop and scale. The layout does the comparing |
+| `data_evidence` | the headline carries the claim — "accuracy drops sharply beyond 8K tokens", not "accuracy by context length" |
+| `algorithm`, `derivation` | the formal object dominates and the interpretation sits beside it, not underneath it as bullets |
+| `primary_source` | the passage at length is correct here. A long source being analysed is not a wall of text |
+| `big_idea` | one claim, large, alone |
+
+Two more from the outline that change what you write:
+
+- **`visual_anchor`** — this slide reuses a picture other slides also use. Draw
+  it **once**, link the same file, and let the emphasis move. Five unrelated
+  diagrams look varied and teach worse: the student spends each slide
+  re-learning the layout instead of the addition.
+- **`delivery_dependency: high`** — the slide is deliberately incomplete without
+  the professor talking over it. Do not fill it in.
+
 What good slides do:
 
 - **Say one thing each.** A slide with two claims is two slides.
@@ -146,11 +173,17 @@ slides:
     title: When a high score is not evidence
     minutes: 8
     purpose: surface the train/test misconception
+    archetype: question
 figures:
   MODULE-06-slides-fig-01-split.svg:
     title: Train, validation and test split
     alt: Training data, validation data and a held-out test set never touched during tuning
 ```
+
+Carry each slide's `archetype` across from the outline. The renderer reads it —
+a `question` or `big_idea` slide is set large and left with its whitespace
+rather than flowed like body copy — and it is what a later check has to compare
+the markdown against.
 
 Every figure gets an entry, including ones you drew. A figure with no entry is a
 figure whose licence nothing checks, and for a found or generated image that is

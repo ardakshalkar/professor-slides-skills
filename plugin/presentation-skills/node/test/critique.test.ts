@@ -1,0 +1,169 @@
+/**
+ * The visual grammar and the whole-deck critique.
+ *
+ * Almost everything here is a warning, so the tests mostly assert that a
+ * finding is *reported* rather than that it stops anything. The exception is
+ * the one that matters most and is tested first: an answer on a question slide.
+ */
+
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { ARCHETYPES, INTENTS, TEXT_ROLES } from "../src/archetypes.ts";
+import { checkSlideGrammar, critiqueDeck } from "../src/critique.ts";
+import type { Outline, OutlineSlide } from "../src/plan.ts";
+
+const slide = (over: Partial<OutlineSlide> & { number: number }): OutlineSlide => ({
+  title: `slide ${over.number}`,
+  ...over,
+});
+
+const deck = (slides: OutlineSlide[], over: Partial<Outline> = {}): Outline => ({
+  deck: "d",
+  title: "t",
+  slides,
+  ...over,
+});
+
+const messages = (problems: { message: string }[]) => problems.map((p) => p.message).join("\n");
+const errorsOf = (problems: { severity: string; message: string }[]) =>
+  problems.filter((p) => p.severity === "error");
+
+test("the grammar is one vocabulary, and it is complete", () => {
+  assert.equal(Object.keys(ARCHETYPES).length, 18);
+  assert.equal(Object.keys(TEXT_ROLES).length, 10);
+  assert.ok(INTENTS.includes("check_understanding"));
+  // Every archetype's allowed roles are real roles, and nothing both allows and
+  // forbids the same one.
+  for (const [name, archetype] of Object.entries(ARCHETYPES)) {
+    for (const role of archetype.roles) assert.ok(role in TEXT_ROLES, `${name}: ${role}`);
+    for (const role of archetype.forbids ?? []) {
+      assert.ok(role in TEXT_ROLES, `${name}: ${role}`);
+      assert.ok(!archetype.roles.includes(role), `${name} both allows and forbids ${role}`);
+    }
+  }
+});
+
+test("an answer on a question slide is an error, not a warning", () => {
+  const problems = checkSlideGrammar(
+    slide({ number: 1, archetype: "question", text_roles: ["question", "explanation"] }),
+  );
+  const errors = errorsOf(problems);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0]!.message, /must not carry explanation/);
+});
+
+test("the same applies to an activity slide", () => {
+  const errors = errorsOf(
+    checkSlideGrammar(slide({ number: 2, archetype: "activity", text_roles: ["takeaway"] })),
+  );
+  assert.equal(errors.length, 1);
+});
+
+test("a role the archetype is not for is a warning", () => {
+  const problems = checkSlideGrammar(
+    slide({ number: 3, archetype: "single_visual", text_roles: ["label", "takeaway"] }),
+  );
+  assert.deepEqual(errorsOf(problems), []);
+  assert.match(messages(problems), /takeaway text on a 'single_visual' slide/);
+});
+
+test("describing what the room can already see is refused on a photograph", () => {
+  const errors = errorsOf(
+    checkSlideGrammar(slide({ number: 4, archetype: "single_visual", text_roles: ["explanation"] })),
+  );
+  assert.equal(errors.length, 1);
+});
+
+test("an archetype that does not exist is an error and stops further grammar checks", () => {
+  const problems = checkSlideGrammar(slide({ number: 5, archetype: "hero_banner" }));
+  assert.equal(problems.length, 1);
+  assert.match(problems[0]!.message, /is not a slide archetype/);
+});
+
+test("a picture-carried slide that names no picture is reported", () => {
+  const problems = checkSlideGrammar(slide({ number: 6, archetype: "annotated_object" }));
+  assert.match(messages(problems), /carried by its picture/);
+});
+
+test("three identical archetypes in a row are reported", () => {
+  const problems = critiqueDeck(deck([
+    slide({ number: 1, archetype: "definition" }),
+    slide({ number: 2, archetype: "definition" }),
+    slide({ number: 3, archetype: "definition" }),
+  ]));
+  assert.match(messages(problems), /slides 1–3 are all 'definition'/);
+});
+
+test("a mechanism shown before anything asks for it is reported", () => {
+  const problems = critiqueDeck(deck([
+    slide({ number: 1, archetype: "system_diagram", required_visual: "the pipeline" }),
+    slide({ number: 2, archetype: "question", text_roles: ["question"] }),
+  ]));
+  assert.match(messages(problems), /before anything asks the question it answers/);
+});
+
+test("a visual anchor used once is reported — it is a figure, not an anchor", () => {
+  const problems = critiqueDeck(deck([
+    slide({ number: 1, archetype: "system_diagram", visual_anchor: "pipeline" }),
+    slide({ number: 2, archetype: "worked_example" }),
+  ]));
+  assert.match(messages(problems), /visual_anchor 'pipeline' is used on one slide/);
+
+  const reused = critiqueDeck(deck([
+    slide({ number: 1, archetype: "question", text_roles: ["question"] }),
+    slide({ number: 2, archetype: "system_diagram", visual_anchor: "pipeline", focus: "retrieval" }),
+    slide({ number: 3, archetype: "system_diagram", visual_anchor: "pipeline", focus: "generation" }),
+  ]));
+  assert.doesNotMatch(messages(reused), /used on one slide/);
+});
+
+test("nine slides of new material with no reset are reported", () => {
+  const many = Array.from({ length: 10 }, (_, index) =>
+    slide({ number: index + 1, archetype: index % 2 ? "worked_example" : "definition" }));
+  assert.match(messages(critiqueDeck(deck(many))), /no roadmap, synthesis or section break/);
+});
+
+test("a deck that never asks the room anything is reported", () => {
+  const many = Array.from({ length: 6 }, (_, index) =>
+    slide({ number: index + 1, archetype: "worked_example" }));
+  assert.match(messages(critiqueDeck(deck(many))), /no slide asks the students anything/);
+});
+
+test("beats have to cover the slides, and to hand over", () => {
+  const problems = critiqueDeck(deck(
+    [slide({ number: 1 }), slide({ number: 2 }), slide({ number: 3 })],
+    {
+      beats: [
+        { beat: "open-lecture", slides: [1], exit_understanding: "they know what is coming" },
+        { beat: "story-so-far", slides: [1], exit_understanding: "done" },
+      ],
+    },
+  ));
+  const text = messages(problems);
+  assert.match(text, /slide 1 is claimed by two beats/);
+  assert.match(text, /slide 2 belongs to no beat/);
+  assert.match(text, /has no transition_question/);
+});
+
+test("a beat with no exit_understanding cannot say whether its slides are right", () => {
+  const problems = critiqueDeck(deck([slide({ number: 1 })], {
+    beats: [{ beat: "open-lecture", slides: [1] }],
+  }));
+  assert.match(messages(problems), /does not say what is true for the learner/);
+});
+
+test("a handout keeping slides that need the professor is reported", () => {
+  const problems = critiqueDeck(deck(
+    [slide({ number: 1, archetype: "single_visual", required_visual: "the map", delivery_dependency: "high" })],
+    { presentation: { output_mode: "handout" } },
+  ));
+  assert.match(messages(problems), /output_mode is handout/);
+});
+
+test("the same deck as teaching material says nothing about it", () => {
+  const problems = critiqueDeck(deck(
+    [slide({ number: 1, archetype: "single_visual", required_visual: "the map", delivery_dependency: "high" })],
+    { presentation: { output_mode: "teaching" } },
+  ));
+  assert.doesNotMatch(messages(problems), /output_mode is handout/);
+});
