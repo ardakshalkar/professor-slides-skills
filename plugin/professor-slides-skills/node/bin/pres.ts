@@ -205,6 +205,23 @@ async function commandRender(): Promise<void> {
     pdf: has("pdf"),
     ...(outDir ? { outDir } : {}),
   });
+
+  // Before the "wrote" lines, not after. A slide that runs past the bottom
+  // margin loses its last lines *silently* — they are not clipped with a mark,
+  // they are simply off the slide — and a warning printed under a success
+  // message is a warning nobody reads until the lecture.
+  const overflow = result.warnings.filter((warning) => / runs to /.test(warning));
+  const others = result.warnings.filter((warning) => !/ runs to /.test(warning));
+  if (overflow.length) {
+    console.warn(
+      `\n${overflow.length} slide(s) run past the bottom of the slide. Whatever falls below is\n` +
+      "not clipped or marked — it is simply not on the slide, and you will find out in the room:\n",
+    );
+    for (const warning of overflow) console.warn(`  ${warning}`);
+    console.warn("\nShorten those slides or split them. Nothing here can do it for you: which half\nbelongs on which slide is a teaching decision.\n");
+  }
+  for (const warning of others) console.warn(`  ${warning}`);
+
   console.log(`wrote ${result.pptx}`);
   if (has("pdf")) {
     if (result.pdf) console.log(`wrote ${result.pdf}`);
@@ -218,7 +235,6 @@ async function commandRender(): Promise<void> {
       );
     }
   }
-  for (const warning of result.warnings) console.warn(`  ${warning}`);
   console.log("\nThen look at it. The first render usually has a real defect or two, and they are\nobvious in the pages and invisible in the source.");
 }
 

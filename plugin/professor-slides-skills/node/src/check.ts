@@ -87,6 +87,22 @@ export function checkDeck(deckPath: string): DeckCheck {
   // professor's question.
   for (const mismatch of checkContract(slides, plan)) problems.push(error(mismatch));
 
+  // --- mathematics that did not convert ------------------------------------
+  // A formula is read as authoritative and nobody proofreads the projector, so
+  // a half-converted one is worse than none at all. This is an error rather
+  // than a warning for that reason: the deck does not build until the professor
+  // either simplifies the expression or draws it as a figure.
+  for (const [index, blocks] of slides.entries()) {
+    for (const block of blocks) {
+      if (block.kind !== "math" || !block.unconverted.length) continue;
+      problems.push(error(
+        `slide ${index + 1}: ${block.unconverted.join(", ")} has no text equivalent, so the formula ` +
+        `would go up mangled.\n  Source: ${block.source}\n  Either write it in a form Unicode can ` +
+        "set, or draw it as a figure and link it like any other picture.",
+      ));
+    }
+  }
+
   // --- emphasis that will not survive the render ---------------------------
   // PowerPoint can hold a bold word inside a bulleted line; pptxgenjs cannot
   // write one without losing the bullet (see the list case in `render.ts`), so

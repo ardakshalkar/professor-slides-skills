@@ -12,6 +12,8 @@
  * course on disk.
  */
 
+import { convertInline, displayMath, latexToUnicode } from "./math.ts";
+
 export type Block =
   | { kind: "heading"; level: number; text: string }
   | { kind: "paragraph"; text: string }
@@ -19,6 +21,7 @@ export type Block =
   | { kind: "code"; text: string }
   | { kind: "list"; ordered: boolean; items: string[] }
   | { kind: "table"; rows: string[][] }
+  | { kind: "math"; text: string; source: string; unconverted: string[] }
   | { kind: "image"; alt: string; src: string };
 
 /** One planned slide, as much of `SlideSpecification` as the check needs. */
@@ -64,8 +67,27 @@ export function parseBlocks(slide: string): Block[] {
     // An image's alt text wraps across lines in the source, so match the joined
     // paragraph rather than any single line of it.
     const image = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(text);
-    if (image) blocks.push({ kind: "image", alt: image[1]!.replace(/\s+/g, " "), src: image[2]! });
-    else blocks.push({ kind: "paragraph", text });
+    if (image) {
+      blocks.push({ kind: "image", alt: image[1]!.replace(/\s+/g, " "), src: image[2]! });
+      return;
+    }
+    // A paragraph that is nothing but display maths becomes a block of its own,
+    // so the renderer can centre it and set it larger than body copy.
+    const display = displayMath(text);
+    if (display !== null) {
+      const converted = latexToUnicode(display);
+      blocks.push({
+        kind: "math",
+        text: converted.text,
+        source: display,
+        unconverted: converted.unconverted,
+      });
+      return;
+    }
+    // Inline maths is converted where it stands, so `\(x_1\)` reads as x₁ in
+    // the middle of a sentence rather than as its own source code.
+    const inline = convertInline(text);
+    blocks.push({ kind: "paragraph", text: inline.text });
   };
 
   while (index < lines.length) {
@@ -248,7 +270,7 @@ export function creditFor(document: any, src: string): string | null {
  * a code block, which is how a code block ends up taller than the panel drawn
  * behind it.
  */
-export const CHAR_WIDTH = { proportional: 0.45, mono: 0.62 } as const;
+export const CHAR_WIDTH = { proportional: 0.45, mono: 0.57 } as const;
 
 /**
  * How many characters fit on one line of the given width.

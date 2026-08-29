@@ -67,9 +67,25 @@ const RULE = "C6CED6";
 const CODE_BG = "F2F4F7";
 const CODE_LINE = "E2E7ED";
 
+// --- the typefaces ----------------------------------------------------------
+// Chosen for what is *present on the lecture-room machine*, not for what looks
+// best in an editor. A deck that substitutes a missing font reflows, and it
+// reflows on the projector rather than on the laptop it was built on.
+//
+//   Cambria    ships with Windows and with Office for Mac. A serif title
+//              against a sans body separates the two without a second colour.
+//   Calibri    still installed everywhere. Aptos replaced it as the Office
+//              default in 2024 but substitutes on older installs, which is the
+//              one thing a lecture deck cannot afford.
+//   Consolas   ships with Windows and with Office for Mac. Replaces Courier
+//              New, which is genuinely bad on a projector: a low x-height and
+//              thin strokes at the back of a room, and a 0.6em advance that
+//              wastes a fifth of every code line.
+//
+// `references/typography.md` has the reasoning and the alternatives.
 const HEAD_FONT = "Cambria";
 const BODY_FONT = "Calibri";
-const MONO_FONT = "Courier New";
+const MONO_FONT = "Consolas";
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
@@ -385,6 +401,20 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
             rowH: heights, valign: "middle", margin: 0.12, fill: { color: PAPER },
           });
           advance(heights.reduce((sum, height) => sum + height, 0), 0.35);
+          break;
+        }
+
+        // Display mathematics: centred, larger than body copy, in the serif.
+        // Set in text rather than typeset — see src/math.ts for what that can
+        // and cannot carry.
+        case "math": {
+          const height = textHeight(block.text, 24, CONTENT_W, 1.3);
+          slide.addText(block.text, {
+            x: MARGIN, y: cursor, w: CONTENT_W, h: height,
+            fontFace: HEAD_FONT, fontSize: 24, color: INK, align: "center",
+            lineSpacingMultiple: 1.3, margin: 0,
+          });
+          advance(height, 0.34);
           break;
         }
 
