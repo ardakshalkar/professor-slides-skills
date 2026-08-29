@@ -1,0 +1,121 @@
+# A taught session where the deck carries the argument.
+#
+# Fill every {{ slot }} and delete every slide you do not use, including these
+# comments. Slide order and count become the render contract, so a slide deleted
+# here is a slide that must not appear in the markdown.
+#
+# Every concept named here must belong to the module. If the session needs one
+# the module does not have, that is a claim, and it is the professor's — stop
+# and say which, rather than adding it.
+
+outline_version: 1
+deck: "{{ MODULE-ID }}-slides"
+title: "{{ session title }}"
+course_id: "{{ COURSE-ID }}"
+course_version_id: "{{ COURSE-ID-YYYY-TERM }}"
+module_id: "{{ MODULE-ID }}"
+
+# The approval gate. Left as `draft` by the skill that wrote this; moved to
+# `approved` by the professor, or by an agent they explicitly told to. Nothing
+# is built or rendered from a draft.
+status: draft
+approved_by: null
+approved_at: null
+
+presentation:
+  audience: "{{ asked, not assumed }}"
+  style: lecture
+  language: "{{ from preferences }}"
+  duration_minutes: "{{ from the scheduled meeting }}"
+  max_slides: "{{ roughly duration ÷ 4 }}"
+
+# Written before the slides. A slide list with no arc is a list of topics.
+arc:
+  starts_from: "{{ what they can already do, from the previous module }}"
+  argues: "{{ the one claim this session makes true — a claim, not a topic }}"
+  turn: "{{ where the obvious answer stops working }}"
+  leaves_them_able_to: "{{ a capability a check-for-understanding could test }}"
+
+outcomes: ["{{ LO-ID }}"]
+concepts: ["{{ CONCEPT-ID }}"]
+
+slides:
+  # Open by placing the session in the sequence. Both halves are read from the
+  # previous module; neither is a summary of what you hope they know.
+  - number: 1
+    type: opening
+    title: "{{ where we are }}"
+    minutes: 5
+    purpose: place the session — last time, today, what this builds on
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  # If the professor has named a shared misconception, correct it here, first,
+  # before the new content. If there is none, delete this slide rather than
+  # inventing one.
+  - number: 2
+    type: correction
+    title: "{{ the known weakness }}"
+    minutes: 8
+    purpose: "{{ what the class converged on, and what replaces it }}"
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  - number: 3
+    type: concept
+    title: "{{ concept title }}"
+    minutes: 10
+    purpose: "{{ what this slide has to leave behind }}"
+    outcomes: ["{{ LO-ID }}"]
+    concepts: ["{{ CONCEPT-ID }}"]
+    sources: ["{{ RES-ID }}"]
+
+  # A visual the session needs. The build step draws it, finds it, or records
+  # the prompt that would produce it and reports the slide as waiting.
+  - number: 4
+    type: figure
+    title: "{{ figure title }}"
+    minutes: 6
+    purpose: "{{ what the picture makes concrete }}"
+    concepts: ["{{ CONCEPT-ID }}"]
+    required_visual: "{{ what the picture must show }}"
+
+  # An example you construct yourself is fine and is labelled as one. A
+  # statistic, dataset or quotation you cannot cite is not.
+  - number: 5
+    type: worked_example
+    title: "{{ worked example }}"
+    minutes: 15
+    purpose: "{{ the step students actually trip on }}"
+    outcomes: ["{{ LO-ID }}"]
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  # One per new concept, phrased as a question a student answers rather than a
+  # topic they nod at.
+  - number: 6
+    type: check
+    title: Check yourself
+    minutes: 8
+    purpose: one question per new concept
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  - number: 7
+    type: closing
+    title: Next
+    minutes: 3
+    purpose: what the next session does with this, and the reading before then
+
+# An omission is often right. An unrecorded omission is indistinguishable from
+# having forgotten, and `pres outline check` treats it as an error.
+coverage:
+  outcomes_served: ["{{ LO-ID }}"]
+  concepts_covered: ["{{ CONCEPT-ID }}"]
+  concepts_omitted:
+    - concept: "{{ CONCEPT-ID }}"
+      why: "{{ why this session is not the place for it }}"
+
+generated_by:
+  produced_by: outline-presentation-skill
+  model_id: "{{ model }}"
+  prompt_version: outline-presentation/v1
+  input_refs: ["{{ MODULE-ID }}", "{{ LO-ID }}"]
+  created_at: "{{ ISO-8601 }}"
+  source: "{{ the provenance line from pres source }}"

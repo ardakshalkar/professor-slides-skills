@@ -1,0 +1,73 @@
+# The render contract: `<deck>.plan.yaml`, beside the markdown.
+#
+# `pres render` reads this rather than trusting whoever is driving. Three things
+# in it are enforced:
+#
+#   status   an outline still in draft is not rendered, whatever the deck looks
+#            like — a .pptx built from a proposal is a proposal wearing the
+#            clothes of a finished deck
+#   slides   count, order and title must match the markdown; a mismatch means
+#            one of the two was edited after the other, and nothing here
+#            reorders slides to make them agree
+#   figures  a picture claiming a source without an attribution line stops the
+#            render, because a licence is not satisfied by a note in someone's
+#            memory
+#
+# Fill every {{ slot }}. Delete nothing except these comments.
+
+plan_version: 1
+deck: "{{ DECK }}.md"
+title: "{{ session title }}"
+
+# The outline this was built from, relative to this file. Its `status` is the
+# gate; the copy below is a record of what it said when the deck was built, and
+# the file itself is what is read.
+outline: "{{ DECK }}.outline.yaml"
+status: "{{ mirrored from the outline }}"
+
+max_slides: "{{ from the outline }}"
+
+# The approved sequence. `minutes` and `purpose` become the speaker notes, which
+# is why they belong here and not on the slide.
+slides:
+  - number: 1
+    title: "{{ exactly the outline's title, and exactly the markdown's heading }}"
+    minutes: 8
+    purpose: "{{ what this slide has to do }}"
+  - number: 2
+    title: "{{ … }}"
+    minutes: 12
+    purpose: "{{ … }}"
+    # Carried over from the outline. `pres check` warns if the slide has no
+    # picture, so either draw it, record a prompt below, or take this off.
+    required_visual: "{{ what the picture must show }}"
+
+# Every figure the deck links, including the ones you drew.
+figures:
+
+  # A diagram you drew: title and alt text, nothing else to prove.
+  "{{ DECK }}-fig-01-{{ what }}.svg":
+    title: "{{ what it is }}"
+    alt: "{{ what it asserts, in a sentence }}"
+
+  # An image found through `pres find-image`. The attribution is a condition of
+  # the licence, not a courtesy; without it the render stops.
+  "{{ DECK }}-fig-02-{{ what }}.jpg":
+    title: "{{ what it is }}"
+    alt: "{{ what it shows, in a sentence }}"
+    image_source:
+      provider: openverse
+      source_url: "{{ where it came from }}"
+      license: "{{ CC-BY-4.0 }}"
+      attribution: "{{ the line printed under the picture }}"
+
+  # An illustration the professor generated. Captioned as generated at render
+  # time, for the same reason the alt text says so: a picture behind a lecturer
+  # is read as evidence unless it says otherwise.
+  "{{ DECK }}-fig-03-{{ what }}.png":
+    title: "{{ what it is }}"
+    alt: "{{ what it shows }}. Illustrative; not a measurement."
+    image_prompt:
+      model: "{{ the model the professor ran }}"
+      prompt: "{{ specific about the thing, silent about the truth — no numbers, no axes, no labelled data }}"
+      generated: true

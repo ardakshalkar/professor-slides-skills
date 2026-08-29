@@ -1,0 +1,37 @@
+#!/usr/bin/env sh
+# The `pres` CLI, run by whichever Node this machine happens to have.
+#
+# Claude Code puts this directory on the Bash tool's PATH while the plugin is
+# enabled, so skills can say `pres source` instead of a path to a .ts file and a
+# flag — which is the difference between a skill that works on a colleague's
+# laptop and one that does not.
+#
+# Node 22.6+ runs TypeScript directly with --experimental-strip-types; 23.6+
+# needs no flag at all but accepts it. Set PRES_NODE to force an interpreter.
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+entry="$here/../node/bin/pres.ts"
+
+for candidate in "$PRES_NODE" node nodejs; do
+    [ -z "$candidate" ] && continue
+    command -v "$candidate" >/dev/null 2>&1 || continue
+    major=$("$candidate" -p "process.versions.node.split('.')[0]" 2>/dev/null) || continue
+    [ -n "$major" ] || continue
+    if [ "$major" -ge 22 ]; then
+        exec "$candidate" --experimental-strip-types --no-warnings "$entry" "$@"
+    fi
+done
+
+cat >&2 <<'MESSAGE'
+pres: no Node 22.6 or later on PATH.
+
+This plugin runs its TypeScript directly, which needs Node 22.6+
+(--experimental-strip-types). Install a current Node, or point PRES_NODE at one:
+
+    PRES_NODE=/path/to/node pres source --course CSS-4008
+
+The first run also needs its dependencies:
+
+    cd "$(dirname "$0")/../node" && npm install
+MESSAGE
+exit 127

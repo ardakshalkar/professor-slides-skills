@@ -1,0 +1,36 @@
+# The menu /outline-presentation reads out.
+#
+# These are session shapes, not content. Each one carries an arc and a slide
+# sequence with the slots empty; none of them carries a claim about what a
+# course teaches, and no slot is ever filled with a plausible-sounding outcome.
+#
+# The scheduled activity usually settles the choice: a 100-minute lecture, a
+# 150-minute lab and a 90-minute workshop are not the same artefact.
+
+surface: outline-presentation
+default: lecture
+
+templates:
+  - id: lecture
+    file: lecture-outline.yaml
+    name: Lecture
+    suits: a taught session where the deck carries the argument
+    shape: hook, correction, concepts, worked example, checks, next
+
+  - id: seminar
+    file: seminar-outline.yaml
+    name: Seminar
+    suits: a session built on a reading, where the discussion is the content
+    shape: the claim under discussion, the evidence, positions, synthesis
+
+  - id: workshop
+    file: workshop-outline.yaml
+    name: Workshop
+    suits: a practical where the slides punctuate the work rather than fill it
+    shape: framing, demonstration, task blocks with checkpoints, debrief
+
+notes: |
+  Every template's slide list is illustrative and every entry is deletable. What
+  is not deletable is the arc, the coverage statement, and the requirement that
+  each slide names the concepts and outcomes it serves — those three are what
+  `pres outline check` reads.

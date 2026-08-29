@@ -1,0 +1,105 @@
+# A practical where the slides punctuate the work rather than fill it.
+#
+# The unit here is the task block, not the slide. Each block has a checkpoint —
+# something observable that says whether the room can move on — because a
+# workshop where half the room is stuck and nobody knows is a workshop that
+# ends with half the room having done nothing.
+#
+# Delete every {{ slot }} you do not fill and every block you do not use.
+
+outline_version: 1
+deck: "{{ MODULE-ID }}-workshop"
+title: "{{ session title }}"
+course_id: "{{ COURSE-ID }}"
+course_version_id: "{{ COURSE-ID-YYYY-TERM }}"
+module_id: "{{ MODULE-ID }}"
+
+status: draft
+approved_by: null
+approved_at: null
+
+presentation:
+  audience: "{{ asked, not assumed }}"
+  style: workshop
+  language: "{{ from preferences }}"
+  duration_minutes: "{{ from the scheduled meeting }}"
+  max_slides: "{{ roughly duration ÷ 12 — the slides are punctuation }}"
+
+arc:
+  starts_from: "{{ what they can already run, and on what }}"
+  argues: "{{ what the exercise demonstrates that explaining it would not }}"
+  turn: "{{ the step where the naive approach visibly fails }}"
+  leaves_them_able_to: "{{ what they can do unaided afterwards }}"
+
+outcomes: ["{{ LO-ID }}"]
+concepts: ["{{ CONCEPT-ID }}"]
+
+# What the room needs before anything runs. A workshop that discovers a missing
+# dependency at minute twenty has lost twenty minutes of every person in it.
+prerequisites_in_the_room:
+  - "{{ software, data or accounts, and how they were told to have it ready }}"
+
+slides:
+  - number: 1
+    type: opening
+    title: "{{ what we are building and why }}"
+    minutes: 5
+    purpose: the framing, and what will be true at the end
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  - number: 2
+    type: demonstration
+    title: "{{ the thing done once, in front of them }}"
+    minutes: 10
+    purpose: "{{ the step that is hard to describe and easy to show }}"
+    concepts: ["{{ CONCEPT-ID }}"]
+    required_visual: "{{ what has to be on screen — a diagram, not a screenshot of results }}"
+
+  - number: 3
+    type: task
+    title: "{{ task 1 }}"
+    minutes: 25
+    purpose: "{{ what they do, and the checkpoint that says they did it }}"
+    outcomes: ["{{ LO-ID }}"]
+    concepts: ["{{ CONCEPT-ID }}"]
+    sources: ["{{ RES-ID }}"]
+
+  # The correction slide, placed where the failure happens rather than at the
+  # end. Delete it if there is no predictable failure.
+  - number: 4
+    type: correction
+    title: "{{ where this usually goes wrong }}"
+    minutes: 8
+    purpose: "{{ the failure, and the rule that avoids it }}"
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  - number: 5
+    type: task
+    title: "{{ task 2 }}"
+    minutes: 25
+    purpose: "{{ what they do, and the checkpoint }}"
+    outcomes: ["{{ LO-ID }}"]
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  - number: 6
+    type: debrief
+    title: "{{ what we saw }}"
+    minutes: 12
+    purpose: "{{ the generalisation the exercise earns }}"
+    outcomes: ["{{ LO-ID }}"]
+    concepts: ["{{ CONCEPT-ID }}"]
+
+coverage:
+  outcomes_served: ["{{ LO-ID }}"]
+  concepts_covered: ["{{ CONCEPT-ID }}"]
+  concepts_omitted:
+    - concept: "{{ CONCEPT-ID }}"
+      why: "{{ why this session is not the place for it }}"
+
+generated_by:
+  produced_by: outline-presentation-skill
+  model_id: "{{ model }}"
+  prompt_version: outline-presentation/v1
+  input_refs: ["{{ MODULE-ID }}", "{{ LO-ID }}"]
+  created_at: "{{ ISO-8601 }}"
+  source: "{{ the provenance line from pres source }}"

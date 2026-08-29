@@ -1,0 +1,66 @@
+# The render contract for MODULE-06-slides.md.
+#
+# `minutes` and `purpose` become the speaker notes, which is why they are here
+# and not on the slides. The titles must match the markdown's headings exactly;
+# `pres render` stops on a mismatch rather than reordering anything.
+
+plan_version: 1
+deck: MODULE-06-slides.md
+title: Model evaluation and overfitting
+outline: MODULE-06-slides.outline.yaml
+status: approved
+max_slides: 12
+
+slides:
+  - number: 1
+    title: Model evaluation and overfitting
+    minutes: 1
+    purpose: open
+
+  - number: 2
+    title: Where we are
+    minutes: 6
+    purpose: place the session — last week's split, this week's question
+
+  - number: 3
+    title: The number that meant nothing
+    minutes: 12
+    purpose: take last week's own result apart before introducing anything new
+
+  - number: 4
+    title: Three sets, and what each one is for
+    minutes: 12
+    purpose: make the tuning/held-out distinction concrete before naming it
+    required_visual: annotated train / validation / test split
+
+  - number: 5
+    title: Overfitting, stated precisely
+    minutes: 14
+    purpose: separate the phenomenon from the symptom students already know
+
+  - number: 6
+    title: Reading two curves
+    minutes: 18
+    purpose: the step people trip on — which gap is the diagnostic one
+
+  - number: 7
+    title: Which score do you believe?
+    minutes: 14
+    purpose: turn the principle into a criterion they can apply to a report
+
+  - number: 8
+    title: Check yourself
+    minutes: 12
+    purpose: one question per new concept; leave time for the answers
+
+  - number: 9
+    title: Next
+    minutes: 4
+    purpose: hand over to regularisation, and name the lab task
+
+figures:
+  MODULE-06-slides-fig-01-split.svg:
+    title: Train, validation and test split
+    alt: >-
+      Training data used to fit the model, validation data used to choose
+      between models, and a test set held back and never touched during tuning

@@ -1,0 +1,406 @@
+/**
+ * An approved deck to `.pptx`, and from there to PDF.
+ *
+ * Ported from `ProfessorHarness/node/bin/render-deck.ts`. The layout, the
+ * palette and the overflow arithmetic are unchanged; what changed is where the
+ * contract comes from. The parent read a `Document` record out of a course
+ * repository, which a standalone plugin has no access to, so the contract is a
+ * `<deck>.plan.yaml` sitting beside the markdown — see `plan.ts`.
+ *
+ * The four gates the parent enforced are enforced here, in `check.ts`, and this
+ * module will not render a deck that fails them. Each is a mistake this made
+ * before the gate existed:
+ *
+ *   - a deck rendered from an unapproved outline looks finished in PowerPoint;
+ *   - a plan that no longer matches its markdown means one of the two was
+ *     edited after the other, and nothing here reorders slides to agree;
+ *   - a figure whose licence requires attribution and has none infringes
+ *     quietly, and the deck builds anyway;
+ *   - a slide that runs past the bottom margin is invisible in the source and
+ *     obvious on the screen behind the lecturer.
+ *
+ * `pptxgenjs` and `sharp` are loaded lazily, so reading and checking a course
+ * never depends on a native image library.
+ */
+
+import { createRequire } from "node:module";
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { checkDeck, errorsIn, describeProblems } from "./check.ts";
+import { columnWidths, plain, textHeight, type Block } from "./deck.ts";
+import { creditForFigure, type DeckPlan } from "./plan.ts";
+
+const require = createRequire(import.meta.url);
+const scriptDirectory = dirname(fileURLToPath(import.meta.url));
+
+function loadDependency(name: string): any {
+  const root = process.env.PRES_NODE_MODULES
+    ? resolve(process.env.PRES_NODE_MODULES)
+    : resolve(scriptDirectory, "..", "node_modules");
+  try {
+    return require(join(root, name));
+  } catch {
+    try {
+      return require(name);
+    } catch (error) {
+      throw new Error(
+        `Cannot load ${name}. Run \`npm install pptxgenjs sharp\` in the plugin's node/ directory, ` +
+        `or set PRES_NODE_MODULES to a directory containing it.\n${String(error)}`,
+      );
+    }
+  }
+}
+
+// --- the house palette ------------------------------------------------------
+// One restrained set rather than a per-deck choice: these decks are the same
+// course seen week after week, and a palette that changes with the topic reads
+// as a different course.
+const INK = "1F2933";
+const MUTED = "52616B";
+const PRIMARY = "4A5F7A";
+const LIGHT = "DBE4F0";
+const PAPER = "FFFFFF";
+const RULE = "C6CED6";
+const CODE_BG = "F2F4F7";
+const CODE_LINE = "E2E7ED";
+
+const HEAD_FONT = "Cambria";
+const BODY_FONT = "Calibri";
+const MONO_FONT = "Courier New";
+
+const SLIDE_W = 13.33;
+const SLIDE_H = 7.5;
+const MARGIN = 0.7;
+const CONTENT_W = SLIDE_W - MARGIN * 2;
+const FLOOR = SLIDE_H - 0.5; // the 0.5" bottom margin, enforced rather than hoped for
+
+/**
+ * `**bold**`, `*italic*` and `` `code` `` into pptxgenjs runs.
+ *
+ * Bold is matched before italic, or `**x**` would be read as an empty italic
+ * followed by a stray one. Italics were missing from the renderer this was
+ * ported from, and the failure was silent in exactly the wrong way: the deck
+ * built, and the asterisks were on the screen behind the lecturer.
+ */
+function runs(text: string, base: Record<string, unknown>): unknown[] {
+  return text
+    .split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
+    .filter(Boolean)
+    .map((part) => {
+      if (part.startsWith("**")) return { text: part.slice(2, -2), options: { ...base, bold: true } };
+      if (part.startsWith("*")) return { text: part.slice(1, -1), options: { ...base, italic: true } };
+      if (part.startsWith("`")) return { text: part.slice(1, -1), options: { ...base, fontFace: MONO_FONT } };
+      return { text: part, options: { ...base } };
+    });
+}
+
+interface RenderContext {
+  materialsDir: string;
+  outDir: string;
+  name: string;
+  title: string;
+  plan: DeckPlan;
+}
+
+async function build(slides: Block[][], context: RenderContext): Promise<{ file: string; warnings: string[] }> {
+  const pptxgen = loadDependency("pptxgenjs");
+  const sharp = loadDependency("sharp");
+  const warnings: string[] = [];
+  const figures = context.plan.figures ?? {};
+
+  const pres = new pptxgen();
+  pres.layout = "LAYOUT_WIDE"; // before any slide is added, or coordinates lie
+  pres.author = "build-presentation-skill";
+  pres.title = context.title;
+
+  const noteFor = (index: number): string | null => {
+    const spec = context.plan.slides?.find((slide) => slide.number === index + 1);
+    if (!spec) return null;
+    const minutes = spec.minutes ? `${spec.minutes} min` : null;
+    return [minutes, spec.purpose].filter(Boolean).join(" — ") || null;
+  };
+
+  for (const [index, blocks] of slides.entries()) {
+    const heading = blocks.find((block) => block.kind === "heading");
+    const isTitleSlide = index === 0 && heading?.kind === "heading" && heading.level === 1;
+    const slide = pres.addSlide();
+    slide.background = { color: isTitleSlide ? INK : PAPER };
+
+    let cursor = 1.6;
+    // Where the last block actually ends, as against where the next one would
+    // start. Without the distinction every full slide reports an overflow of
+    // exactly one inter-block gap.
+    let bottom = cursor;
+    const advance = (height: number, gap = 0.3): void => {
+      bottom = cursor + height;
+      cursor = bottom + gap;
+    };
+
+    if (isTitleSlide) {
+      cursor = 1.9;
+      for (const block of blocks) {
+        if (block.kind === "heading") {
+          const height = textHeight(block.text, 46, 9.0, 1.15);
+          slide.addText(block.text, {
+            x: MARGIN, y: cursor, w: 9.6, h: height,
+            fontFace: HEAD_FONT, fontSize: 46, bold: true, color: PAPER,
+            lineSpacingMultiple: 1.05, margin: 0,
+          });
+          advance(height, 0.5);
+        } else if (block.kind === "paragraph") {
+          const height = textHeight(block.text, 16, 10.0);
+          slide.addText(runs(block.text, { color: LIGHT }), {
+            x: MARGIN, y: cursor, w: 10.0, h: height,
+            fontFace: BODY_FONT, fontSize: 16, margin: 0,
+          });
+          advance(height, 0.28);
+        }
+      }
+      const note = noteFor(index);
+      if (note) slide.addNotes(note);
+      continue;
+    }
+
+    for (const block of blocks) {
+      switch (block.kind) {
+        case "heading": {
+          slide.addText(block.text, {
+            x: MARGIN, y: 0.45, w: CONTENT_W, h: 0.8,
+            fontFace: HEAD_FONT, fontSize: 34, bold: true, color: INK, margin: 0,
+          });
+          slide.addShape(pres.ShapeType.line, {
+            x: MARGIN, y: 1.32, w: CONTENT_W, h: 0,
+            line: { color: RULE, width: 1 },
+          });
+          cursor = 1.6;
+          bottom = cursor;
+          break;
+        }
+
+        case "paragraph": {
+          const height = textHeight(block.text, 17, CONTENT_W);
+          slide.addText(runs(block.text, { color: INK }), {
+            x: MARGIN, y: cursor, w: CONTENT_W, h: height,
+            fontFace: BODY_FONT, fontSize: 17, lineSpacingMultiple: 1.15, margin: 0,
+          });
+          advance(height);
+          break;
+        }
+
+        case "quote": {
+          const height = textHeight(block.text, 15, CONTENT_W - 0.6) + 0.4;
+          slide.addShape(pres.ShapeType.roundRect, {
+            x: MARGIN, y: cursor, w: CONTENT_W, h: height,
+            fill: { color: LIGHT }, line: { color: LIGHT }, rectRadius: 0.06,
+          });
+          slide.addText(runs(block.text, { color: INK }), {
+            x: MARGIN + 0.3, y: cursor + 0.2, w: CONTENT_W - 0.6, h: height - 0.4,
+            fontFace: BODY_FONT, fontSize: 15, lineSpacingMultiple: 1.15, margin: 0,
+          });
+          advance(height);
+          break;
+        }
+
+        case "code": {
+          const height = textHeight(block.text, 18, 5.4, 1.4) + 0.4;
+          slide.addShape(pres.ShapeType.roundRect, {
+            x: MARGIN, y: cursor, w: 6.0, h: height,
+            fill: { color: CODE_BG }, line: { color: CODE_LINE }, rectRadius: 0.06,
+          });
+          slide.addText(block.text, {
+            x: MARGIN + 0.3, y: cursor + 0.2, w: 5.4, h: height - 0.4,
+            fontFace: MONO_FONT, fontSize: 18, color: INK, lineSpacingMultiple: 1.25, margin: 0,
+          });
+          advance(height);
+          break;
+        }
+
+        case "list": {
+          // One run per item, and the emphasis inside it is dropped. That is a
+          // limit of pptxgenjs rather than a choice: it emits a set of
+          // paragraph properties for *every* run, and a run carrying no bullet
+          // emits `buNone` — so a second run inside an item cancels its bullet,
+          // while giving every run the bullet starts a new paragraph per run.
+          // Either way the list comes out wrong, and the version that comes out
+          // wrong quietly is the one with no bullets at all.
+          //
+          // So bullets and hanging indents win over bold inside a bullet, and
+          // `pres check` names any item whose emphasis was dropped rather than
+          // letting the author find out from the projector.
+          //
+          // pptxgenjs also restarts numbering at 1 for every paragraph unless
+          // each one says where it sits in the sequence.
+          const body = block.items.map((item, position) => ({
+            text: plain(item),
+            options: {
+              color: INK,
+              bullet: block.ordered ? { type: "number", startAt: position + 1 } : true,
+              breakLine: position < block.items.length - 1,
+            },
+          }));
+          const height =
+            block.items.reduce((total, item) => total + textHeight(item, 17, CONTENT_W - 0.6), 0) +
+            block.items.length * 0.16;
+          slide.addText(body, {
+            x: MARGIN + 0.15, y: cursor, w: CONTENT_W - 0.3, h: height,
+            fontFace: BODY_FONT, fontSize: 17, margin: 0,
+            paraSpaceAfter: 14, lineSpacingMultiple: 1.15,
+          });
+          advance(height);
+          break;
+        }
+
+        case "table": {
+          const [header, ...body] = block.rows;
+          if (!header) break;
+          const width = CONTENT_W - 0.4;
+          const rows = [
+            header.map((cell) => ({
+              text: plain(cell),
+              options: { bold: true, color: PAPER, fill: { color: PRIMARY }, fontSize: 15 },
+            })),
+            ...body.map((row) =>
+              row.map((cell) => ({ text: plain(cell), options: { color: INK, fontSize: 15 } })),
+            ),
+          ];
+          const rowHeight = 0.62;
+          slide.addTable(rows, {
+            x: MARGIN, y: cursor, w: width,
+            colW: columnWidths(block.rows, width),
+            fontFace: BODY_FONT, border: { type: "solid", color: CODE_LINE, pt: 1 },
+            rowH: rowHeight, valign: "middle", margin: 0.12, fill: { color: PAPER },
+          });
+          advance(rows.length * rowHeight, 0.35);
+          break;
+        }
+
+        case "image": {
+          const source = join(context.materialsDir, block.src);
+          if (!existsSync(source)) {
+            warnings.push(`slide ${index + 1}: ${block.src} is missing; left off the slide`);
+            break;
+          }
+          // The SVG is the committed source; the PNG is a render, and it goes
+          // to output/ with the deck rather than back beside the markdown.
+          const placedW = Math.min(CONTENT_W * 0.75, 8.6);
+          const png = join(context.outDir, `${context.name}-${block.src.replace(/\.[^.]+$/, "")}.png`);
+          const credit = creditForFigure(figures[block.src], block.src);
+          const creditH = credit ? 0.3 : 0;
+          const meta = await sharp(source)
+            .resize({ width: Math.round(placedW * 96 * 2) }) // 2x its placed size
+            .png()
+            .toFile(png);
+          let width = placedW;
+          let height = width * (meta.height / meta.width);
+          const available = FLOOR - cursor - creditH;
+          if (height > available) {
+            height = available;
+            width = height * (meta.width / meta.height);
+          }
+          slide.addImage({
+            path: png,
+            x: (SLIDE_W - width) / 2, y: cursor, w: width, h: height,
+            altText: block.alt,
+          });
+          if (credit) {
+            slide.addText(credit, {
+              x: (SLIDE_W - width) / 2, y: cursor + height + 0.04, w: width, h: 0.22,
+              fontFace: BODY_FONT, fontSize: 10, color: MUTED, margin: 0,
+            });
+          }
+          advance(height + creditH);
+          break;
+        }
+      }
+    }
+
+    if (bottom > FLOOR) {
+      warnings.push(`slide ${index + 1} runs to ${bottom.toFixed(2)}" of ${FLOOR}" — shorten it or split it`);
+    }
+
+    const note = noteFor(index);
+    if (note) slide.addNotes(note);
+  }
+
+  const file = join(context.outDir, `${context.name}.pptx`);
+  await pres.writeFile({ fileName: file });
+  return { file, warnings };
+}
+
+const SOFFICE = [
+  process.env.SOFFICE_PATH,
+  "soffice",
+  "C:/Program Files/LibreOffice/program/soffice.exe",
+  "/usr/bin/soffice",
+  "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+].filter(Boolean) as string[];
+
+/**
+ * PDF by converting *this exact deck*.
+ *
+ * The dependency on LibreOffice is chosen rather than inherited: anything that
+ * renders the markdown a second time produces a different document that merely
+ * looks the same, and then there are two PDFs and no way to say which one the
+ * slides are.
+ */
+export function toPdf(pptx: string, outDir: string): string | null {
+  for (const binary of SOFFICE) {
+    const result = spawnSync(binary, ["--headless", "--convert-to", "pdf", "--outdir", outDir, pptx], {
+      encoding: "utf8",
+    });
+    if (result.error) continue;
+    const pdf = pptx.replace(/\.pptx$/, ".pdf");
+    if (existsSync(pdf)) return pdf;
+  }
+  return null;
+}
+
+export interface RenderResult {
+  pptx: string;
+  pdf: string | null;
+  warnings: string[];
+}
+
+/**
+ * Check, then render, then optionally convert.
+ *
+ * Nothing is written until every error-level check has passed. Warnings are
+ * carried out to the caller rather than swallowed: an overflowing slide is not
+ * a reason to refuse a deck, and it is very much a reason to say so.
+ */
+export async function renderDeck(
+  deckPath: string,
+  options: { outDir?: string; pdf?: boolean } = {},
+): Promise<RenderResult> {
+  const checked = checkDeck(deckPath);
+  const failures = errorsIn(checked.problems);
+  if (failures.length) {
+    throw new Error(
+      `${deckPath} is not renderable:\n${describeProblems(failures)}\n\n` +
+      "Nothing here reorders slides, fills in an attribution or approves an outline to make a\n" +
+      "deck build. Which of the two files is wrong is the professor's question.",
+    );
+  }
+
+  const name = deckPath.replace(/^.*[\\/]/, "").replace(/\.md$/i, "");
+  const outDir = resolve(options.outDir ?? join(process.cwd(), "output"));
+  await mkdir(outDir, { recursive: true });
+
+  const { file, warnings } = await build(checked.slides, {
+    materialsDir: dirname(deckPath),
+    outDir,
+    name,
+    title: checked.plan.title ?? name,
+    plan: checked.plan,
+  });
+
+  const carried = [
+    ...warnings,
+    ...checked.problems.filter((problem) => problem.severity === "warning").map((problem) => problem.message),
+  ];
+
+  return { pptx: file, pdf: options.pdf ? toPdf(file, outDir) : null, warnings: carried };
+}

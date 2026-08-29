@@ -1,0 +1,111 @@
+# A worked outline. See ../README.md — the approval below is part of the
+# illustration, not a decision anybody took.
+
+outline_version: 1
+deck: MODULE-06-slides
+title: Model evaluation and overfitting
+course_id: CSS-4008
+course_version_id: CSS-4008-2026-FALL
+module_id: MODULE-06
+
+status: approved
+approved_by: EXAMPLE-NOT-A-PERSON
+approved_at: 2026-09-28T11:04:00+05:00
+
+presentation:
+  audience: second-year students who have trained one model
+  style: lecture
+  language: English
+  duration_minutes: 100
+  max_slides: 12
+
+arc:
+  starts_from: they can split a dataset and report an accuracy (MODULE-05)
+  argues: a score measured on data you tuned against is not evidence of anything
+  turn: the model that scored 0.97 last week scores 0.61 on data it has not seen
+  leaves_them_able_to: say which of two reported accuracies is trustworthy, and why
+
+outcomes: [LO-02, LO-04]
+concepts: [CONCEPT-MODEL-EVALUATION, CONCEPT-OVERFITTING]
+
+slides:
+  - number: 1
+    type: title
+    title: Model evaluation and overfitting
+    minutes: 1
+    purpose: open
+
+  - number: 2
+    type: opening
+    title: Where we are
+    minutes: 6
+    purpose: place the session — last week's split, this week's question
+    concepts: [CONCEPT-MODEL-EVALUATION]
+
+  - number: 3
+    type: correction
+    title: The number that meant nothing
+    minutes: 12
+    purpose: take last week's own result apart before introducing anything new
+    outcomes: [LO-02]
+    concepts: [CONCEPT-MODEL-EVALUATION]
+
+  - number: 4
+    type: figure
+    title: Three sets, and what each one is for
+    minutes: 12
+    purpose: make the tuning/held-out distinction concrete before naming it
+    outcomes: [LO-02]
+    concepts: [CONCEPT-MODEL-EVALUATION]
+    required_visual: annotated train / validation / test split
+
+  - number: 5
+    type: concept
+    title: Overfitting, stated precisely
+    minutes: 14
+    purpose: separate the phenomenon from the symptom students already know
+    outcomes: [LO-02]
+    concepts: [CONCEPT-OVERFITTING]
+
+  - number: 6
+    type: worked_example
+    title: Reading two curves
+    minutes: 18
+    purpose: the step people trip on — deciding which gap is the diagnostic one
+    outcomes: [LO-02, LO-04]
+    concepts: [CONCEPT-OVERFITTING]
+    sources: [RES-442]
+
+  - number: 7
+    type: comparison
+    title: Which score do you believe?
+    minutes: 14
+    purpose: turn the principle into a criterion they can apply to a report
+    outcomes: [LO-04]
+    concepts: [CONCEPT-MODEL-EVALUATION]
+
+  - number: 8
+    type: check
+    title: Check yourself
+    minutes: 12
+    purpose: one question per new concept
+    concepts: [CONCEPT-MODEL-EVALUATION, CONCEPT-OVERFITTING]
+
+  - number: 9
+    type: closing
+    title: Next
+    minutes: 4
+    purpose: hand over to regularisation, and name the lab task
+
+coverage:
+  outcomes_served: [LO-02, LO-04]
+  concepts_covered: [CONCEPT-MODEL-EVALUATION, CONCEPT-OVERFITTING]
+  concepts_omitted: []
+
+generated_by:
+  produced_by: outline-presentation-skill
+  model_id: claude-opus-5
+  prompt_version: outline-presentation/v1
+  input_refs: [MODULE-06, LO-02, LO-04, RES-442]
+  created_at: 2026-09-28T10:52:00+05:00
+  source: course-directory — ProfessorHarness/courses/CSS-4008

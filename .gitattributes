@@ -1,0 +1,22 @@
+# LF everywhere, checked out as LF on every platform.
+#
+# Not a style preference. `bin/pres` is a `sh` script, and a CRLF checkout makes
+# its shebang unrunnable on Linux and macOS with an error that names neither the
+# file nor the line endings. The deck sources are the second reason: markdown is
+# the source of truth here because it diffs, and a checkout that rewrites every
+# line ending produces a diff of the whole file the first time anyone touches it
+# on the other kind of machine.
+* text=auto eol=lf
+
+# Renders and figures that are not text. Nothing here is committed today —
+# output/ is gitignored — but a professor who moves one into the repository
+# should not have it corrupted on the way in.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.pptx binary
+*.docx binary
+*.xlsx binary
+*.mp4 binary

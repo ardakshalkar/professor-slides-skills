@@ -1,0 +1,91 @@
+# A session built on a reading, where the discussion is the content.
+#
+# The deck is scaffolding here, not the argument, and the timing reflects it: if
+# the slides account for most of the session, this is a lecture wearing a
+# seminar's name. Delete every {{ slot }} you do not fill and every slide you do
+# not use, including these comments.
+
+outline_version: 1
+deck: "{{ MODULE-ID }}-seminar"
+title: "{{ session title }}"
+course_id: "{{ COURSE-ID }}"
+course_version_id: "{{ COURSE-ID-YYYY-TERM }}"
+module_id: "{{ MODULE-ID }}"
+
+status: draft
+approved_by: null
+approved_at: null
+
+presentation:
+  audience: "{{ asked, not assumed }}"
+  style: seminar
+  language: "{{ from preferences }}"
+  duration_minutes: "{{ from the scheduled meeting }}"
+  # Fewer slides than a lecture of the same length, deliberately.
+  max_slides: "{{ roughly duration ÷ 10 }}"
+
+arc:
+  starts_from: "{{ the reading, and what it asks the student to accept }}"
+  argues: "{{ the claim the session puts under pressure }}"
+  turn: "{{ the point where the reading's position becomes contestable }}"
+  leaves_them_able_to: "{{ what they can now argue, and on what grounds }}"
+
+outcomes: ["{{ LO-ID }}"]
+concepts: ["{{ CONCEPT-ID }}"]
+
+slides:
+  - number: 1
+    type: opening
+    title: "{{ the claim on the table }}"
+    minutes: 5
+    purpose: state the claim the session examines, and where it comes from
+    concepts: ["{{ CONCEPT-ID }}"]
+    sources: ["{{ RES-ID }}"]
+
+  # What the reading actually says, in its own terms, before anyone argues with
+  # it. A seminar that opens with the critique has skipped the reading.
+  - number: 2
+    type: evidence
+    title: "{{ what the reading establishes }}"
+    minutes: 10
+    purpose: "{{ the evidence, stated fairly }}"
+    sources: ["{{ RES-ID }}"]
+
+  - number: 3
+    type: positions
+    title: "{{ the disagreement }}"
+    minutes: 10
+    purpose: "{{ the two or three defensible positions, and what separates them }}"
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  # The discussion block. One slide, most of the session. Its purpose is the
+  # question that opens it — everything else happens in the room.
+  - number: 4
+    type: discussion
+    title: "{{ the question that opens the discussion }}"
+    minutes: "{{ the bulk of the session }}"
+    purpose: "{{ what has to be established before the room moves on }}"
+    concepts: ["{{ CONCEPT-ID }}"]
+
+  - number: 5
+    type: synthesis
+    title: "{{ where that leaves us }}"
+    minutes: 10
+    purpose: "{{ what the course now takes as settled, and what stays open }}"
+    outcomes: ["{{ LO-ID }}"]
+    concepts: ["{{ CONCEPT-ID }}"]
+
+coverage:
+  outcomes_served: ["{{ LO-ID }}"]
+  concepts_covered: ["{{ CONCEPT-ID }}"]
+  concepts_omitted:
+    - concept: "{{ CONCEPT-ID }}"
+      why: "{{ why this session is not the place for it }}"
+
+generated_by:
+  produced_by: outline-presentation-skill
+  model_id: "{{ model }}"
+  prompt_version: outline-presentation/v1
+  input_refs: ["{{ MODULE-ID }}", "{{ RES-ID }}"]
+  created_at: "{{ ISO-8601 }}"
+  source: "{{ the provenance line from pres source }}"

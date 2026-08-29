@@ -1,0 +1,37 @@
+{
+  "name": "presentation-skills",
+  "description": "Outline, build and render course presentations from a Supabase course database, a YAML course directory, or a single flat course file.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Ardak Shalkarbayuly"
+  },
+  "license": "MIT",
+  "keywords": [
+    "education",
+    "teaching",
+    "presentations",
+    "slides",
+    "pptx",
+    "marp",
+    "course-design"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Presentation Skills",
+    "shortDescription": "Plan a lecture, write its slides, and render the PowerPoint and PDF.",
+    "longDescription": "Three skills over one course model. The course is found rather than assumed: a Supabase link first, a YAML course directory next, a single flat course.yaml last — and the answer always says which one produced it, because a fallback is an excellent way to hide a stale course.\n\nOutlining is its own step. Before any slide is written, the session's arc, its slide sequence, and an honest statement of which outcomes and concepts it covers and what it deliberately leaves out are drafted for the professor to approve. That approval is a fact in the outline file, and it is the gate: nothing is built from a draft and nothing is rendered from one.\n\nBuilding fills the approved outline in — slides as Marp markdown, diagrams as committed SVG, tables built from the source material, openly-licensed images fetched with their attribution attached, and a written prompt for any illustration the professor must generate themselves. Rendering produces a PowerPoint with real editable shapes and speaker notes, and a PDF converted from that same deck.\n\nFour rules are enforced by the renderer rather than left to judgement: an unapproved outline is refused, the plan must match the markdown in count, order and title, a figure claiming a source without an attribution line stops the build, and any slide running past the bottom margin is named. Readings and book chapters come from the course's own resource records, so there is no second list of sources to keep true.",
+    "developerName": "Ardak Shalkarbayuly",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Outline next week's lecture for CSS-4008.",
+      "Plan a 90-minute workshop on retrieval-augmented generation.",
+      "Build the slides from the approved outline.",
+      "Render the deck to PowerPoint and PDF."
+    ]
+  }
+}

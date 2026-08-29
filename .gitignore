@@ -1,0 +1,15 @@
+# Drafts. A presentation in here is a proposal: nothing has approved it, and a
+# deck rendered from a proposal looks exactly like a finished one.
+work/
+
+# Rendered binaries. Reproducible from the markdown at any time, and a
+# repository whose value is that its contents diff should not carry a .pptx.
+output/
+
+# The resolved Supabase route, discovered by probing rather than curated.
+.pres/
+
+node_modules/
+*.log
+.env
+.env.local

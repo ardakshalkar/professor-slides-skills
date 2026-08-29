@@ -1,0 +1,44 @@
+# PresentationSkills
+
+A standalone Claude Code and Codex plugin that plans a presentation, writes it,
+and renders it — over a course it finds rather than one it assumes.
+
+A spin-off of `/make-materials` from the [AINAR Professor
+Exoskeleton](../../ProfessorHarness), which does the same job welded to that
+repository: it needs the `ainar` CLI on PATH, a `courses/` tree in a particular
+layout, `ainar approve` to promote a draft, and `Document` records to carry the
+render contract. A professor who only wants to build a deck cannot use it.
+
+```bash
+/plugin marketplace add /path/to/PresentationSkills
+/plugin install presentation-skills
+cd plugin/presentation-skills/node && npm install
+```
+
+Everything else — the three skills, the `pres` CLI, where the course comes
+from, and what is enforced rather than trusted — is in
+[the plugin's README](plugin/presentation-skills/README.md).
+[`RULES.md`](plugin/presentation-skills/RULES.md) has the reasoning behind each
+refusal, and [`examples/`](plugin/presentation-skills/examples) has one complete
+worked set: an outline, a deck, a figure and the plan that ties them together.
+
+## Layout
+
+```text
+.claude-plugin/marketplace.json          install from this repository
+plugin/presentation-skills/
+  skills/                                the three skills, with their templates
+  references/                            course sources, outline craft, figures
+  preferences/defaults.yaml              what a deck looks like when nobody said
+  examples/MODULE-06/                    a complete worked set
+  node/                                  the `pres` CLI and its tests
+  bin/pres, bin/pres.cmd                 the shim that puts `pres` on PATH
+work/                                    drafts (gitignored)
+output/                                  renders (gitignored)
+```
+
+## Requirements
+
+Node 22.6 or later — the plugin runs its TypeScript directly. `pptxgenjs` and
+`sharp` are optional and only `pres render` needs them; LibreOffice is needed
+only for the PDF. Reading and checking a course needs none of the three.
