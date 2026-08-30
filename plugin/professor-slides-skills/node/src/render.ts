@@ -232,6 +232,23 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
           y += height + 0.35;
           continue;
         }
+        if (block.kind === "quote") {
+          // A pull quote is the most natural thing a big idea can be, and
+          // dropping it was how a slide built *around* its quotation went up
+          // without one. Set a shade smaller than a claim, with a rule beside
+          // it so it reads as quoted rather than asserted.
+          const height = textHeight(block.text, 26, CONTENT_W - 1.4, 1.3);
+          slide.addShape(pres.ShapeType.line, {
+            x: MARGIN + 0.5, y, w: 0, h: height,
+            line: { color: PRIMARY, width: 3 },
+          });
+          slide.addText(runs(block.text, { color: INK }), {
+            x: MARGIN + 0.85, y, w: CONTENT_W - 1.4, h: height,
+            fontFace: HEAD_FONT, fontSize: 26, lineSpacingMultiple: 1.3, margin: 0,
+          });
+          y += height + 0.4;
+          continue;
+        }
         warnings.push(
           `slide ${index + 1} is a '${archetype}' slide and contains a ${block.kind} block, ` +
           "which this archetype does not carry; it was left off",
