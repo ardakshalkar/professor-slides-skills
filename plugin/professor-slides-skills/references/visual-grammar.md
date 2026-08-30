@@ -269,6 +269,37 @@ substantially higher for technical ones. Those figures reached this file
 secondhand and have not been verified here; treat them as the reason the bands
 differ rather than as numbers to quote to a class.
 
+
+### What checks it, and what it means when it fires
+
+`pres check` compares the markdown against the band the slide's archetype
+declares, and warns at half again over the top of it — 38 words on a `sparse`
+slide, 75 on a `moderate` one. Half again, rather than the exact number, because
+the bands overlap on purpose and warning at the edge would fire on slides nobody
+would call overfull.
+
+It is a warning and it will stay one. Density is intrinsic to some content, and
+the professor is the one who knows whether this is that.
+
+**What it means depends on what the archetype asked for**, so the message
+differs. When the archetype's roles include explanation or evidence, prose is
+what it is for, and too much of it means *cut or split*. When the roles are
+headline and label — `roadmap`, `section_opener`, `visual_comparison` — the
+words were meant to label a picture, so too much of them usually means **the
+picture was never drawn**. The sentences ended up carrying what a drawing should
+have, and the remedy is to draw it and let them shrink back into labels.
+
+That second case is the one worth knowing by sight. It found this, in a real
+deck:
+
+> Slide 2, planned `roadmap`, 78 words in five blocks, nothing drawn. Three
+> bullets each describing something concrete — a prompt as tokens, a chat as
+> resent history — on the slide immediately before one that showed its material
+> properly, in the same deck, by the same hand.
+
+Nothing was broken. Every other check passed. The slide was still wrong, and the
+fix was to draw the thing the sentences were describing.
+
 ## And one rule that is not about truth but about the room
 
 **Colour is never the only channel.** A red/green distinction is invisible to

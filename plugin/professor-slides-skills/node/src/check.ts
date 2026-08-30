@@ -14,6 +14,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { checkContract, parseBlocks, splitSlides, type Block } from "./deck.ts";
+import { checkDensity } from "./density.ts";
 import {
   creditForFigure,
   isApproved,
@@ -121,6 +122,12 @@ export function checkDeck(deckPath: string): DeckCheck {
       }
     }
   }
+
+  // --- the archetype the slide was planned as -----------------------------
+  // The plan declares a density band and a set of text roles for every slide,
+  // and until this ran nothing compared either against the markdown. A slide
+  // could be planned sparse and ship five paragraphs, and the deck built clean.
+  problems.push(...checkDensity(slides, plan));
 
   // --- figures -------------------------------------------------------------
   const materialsDir = dirname(deckPath);
