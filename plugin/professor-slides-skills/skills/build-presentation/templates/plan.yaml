@@ -27,6 +27,10 @@ status: "{{ mirrored from the outline }}"
 
 max_slides: "{{ from the outline }}"
 
+# Slide numbers, bottom right. On unless this says false — a student writing
+# "slide 23" in their notes is the reason they are there.
+slide_numbers: true
+
 # The approved sequence. `minutes` and `purpose` become the speaker notes, which
 # is why they belong here and not on the slide.
 slides:

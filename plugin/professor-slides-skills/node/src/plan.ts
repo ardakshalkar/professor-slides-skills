@@ -149,6 +149,14 @@ export interface DeckPlan extends Plan {
   outline?: string;
   /** Mirrored from the outline when the deck was built. */
   status?: string;
+  /**
+   * Slide numbers, bottom right. On unless this says otherwise.
+   *
+   * Worth having by default: it is how a student writes "slide 23" in their
+   * notes and asks about it next week, and how a colleague reviewing the deck
+   * says which slide they mean.
+   */
+  slide_numbers?: boolean;
   slides: OutlineSlide[];
   figures?: Record<string, FigureRecord>;
 }

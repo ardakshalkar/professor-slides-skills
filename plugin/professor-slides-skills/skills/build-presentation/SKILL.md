@@ -112,6 +112,23 @@ Two more from the outline that change what you write:
 - **`delivery_dependency: high`** — the slide is deliberately incomplete without
   the professor talking over it. Do not fill it in.
 
+### How to write the words
+
+`${CLAUDE_PLUGIN_ROOT}/references/text-style.md` in full. The three that change
+a deck most:
+
+- **A headline asserts; it does not name a topic.** "Kazakh costs 1.75× English
+  for the same news", not "Cost analysis". This is the best-evidenced finding in
+  slide design — audiences given assertion headlines score higher on recall and
+  on understanding, and are still ahead a week later. It also improves the deck
+  before it is written: a slide whose claim you cannot state in a sentence is
+  usually a slide worth cutting.
+- **Sentence case**, for headlines and body alike. Title Case flattens the word
+  shapes we read by and is measurably slower at distance.
+- **Every list parallel** — all verbs, or all noun phrases, never a mixture. A
+  reader who hits the break spends a moment on the grammar instead of the
+  content.
+
 What good slides do:
 
 - **Say one thing each.** A slide with two claims is two slides.

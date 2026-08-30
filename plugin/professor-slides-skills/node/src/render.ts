@@ -355,17 +355,48 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
         }
 
         case "code": {
-          // Measured with the monospace advance, not the proportional one:
-          // Courier New is wider than the body font, so the proportional figure
-          // under-counts the lines and the text overflows the panel behind it.
-          const height = textHeight(block.text, 18, 5.4, 1.4, CHAR_WIDTH.mono) + 0.4;
+          // The panel is sized to the code, not fixed at half the slide.
+          //
+          // It used to be 6" wide whatever it held, which fits 37 monospace
+          // characters at 18pt. Almost no real code is that narrow: a deck
+          // measured after this was written had ten blocks between 39 and 72
+          // characters, every one of them wrapped, and wrapping destroys the
+          // one thing code has that prose does not — its alignment. A
+          // PROMPT/RESPONSE block laid out in columns came out shredded, beside
+          // half a slide of white space.
+          //
+          // So: measure the longest line, and give it the width it needs. Only
+          // when the full content width is not enough does the size step down,
+          // and only when 12pt is still not enough is the text left to wrap.
+          const lines = block.text.split(/\r?\n/);
+          const longest = Math.max(1, ...lines.map((line) => line.length));
+          const available = CONTENT_W - 0.6; // the panel's inner width
+
+          let size = 18;
+          for (const candidate of [18, 16, 14, 12]) {
+            size = candidate;
+            if ((longest * candidate * CHAR_WIDTH.mono) / 72 <= available) break;
+          }
+          if (size < 18) {
+            warnings.push(
+              `slide ${index + 1}: a code line is ${longest} characters, so the block is set at ` +
+              `${size}pt to fit the slide. Shorter lines read better at the back of a room.`,
+            );
+          }
+
+          // Never narrower than a third of the slide — a two-word block in a
+          // tiny panel looks like a mistake rather than a choice.
+          const needed = (longest * size * CHAR_WIDTH.mono) / 72;
+          const textW = Math.min(Math.max(needed, CONTENT_W / 3), available);
+          const height = textHeight(block.text, size, textW, 1.4, CHAR_WIDTH.mono) + 0.4;
+
           slide.addShape(pres.ShapeType.roundRect, {
-            x: MARGIN, y: cursor, w: 6.0, h: height,
+            x: MARGIN, y: cursor, w: textW + 0.6, h: height,
             fill: { color: CODE_BG }, line: { color: CODE_LINE }, rectRadius: 0.06,
           });
           slide.addText(block.text, {
-            x: MARGIN + 0.3, y: cursor + 0.2, w: 5.4, h: height - 0.4,
-            fontFace: MONO_FONT, fontSize: 18, color: INK, lineSpacingMultiple: 1.25, margin: 0,
+            x: MARGIN + 0.3, y: cursor + 0.2, w: textW, h: height - 0.4,
+            fontFace: MONO_FONT, fontSize: size, color: INK, lineSpacingMultiple: 1.25, margin: 0,
           });
           advance(height);
           break;
@@ -509,6 +540,20 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
           ? ` — ${lost} is off the slide`
           : " — into the bottom margin, still visible but tight"),
       );
+    }
+
+    // The slide number, bottom right, quiet.
+    //
+    // Its real job is not navigation during the talk — it is that a student can
+    // write "slide 23" in their notes and ask about it afterwards, and that a
+    // colleague reviewing the deck can say which slide they mean. Skipped on
+    // the title slide, where it is only clutter, and suppressed entirely with
+    // `slide_numbers: false` in the plan.
+    if (!isTitleSlide && context.plan.slide_numbers !== false) {
+      slide.addText(String(index + 1), {
+        x: SLIDE_W - MARGIN - 1.0, y: SLIDE_H - 0.44, w: 1.0, h: 0.26,
+        fontFace: BODY_FONT, fontSize: 11, color: MUTED, align: "right", margin: 0,
+      });
     }
 
     const note = noteFor(index);
