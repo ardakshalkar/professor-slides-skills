@@ -172,20 +172,27 @@ test("a deck that plans almost no pictures is reported", () => {
   // Ten slides that could each carry a picture, and none does. This is the
   // shape a generator produces when left to write rather than to design.
   const prose = Array.from({ length: 10 }, (_, index) =>
-    slide({ number: index + 1, archetype: index % 2 ? "worked_example" : "system_diagram" }));
-  assert.match(messages(critiqueDeck(deck(prose))), /could carry a picture plan one/);
+    slide({ number: index + 1, archetype: index % 2 ? "worked_example" : "synthesis" }));
+  assert.match(messages(critiqueDeck(deck(prose))), /carried by prose/);
 });
 
-test("planning pictures on a quarter of them is enough to pass", () => {
-  const mixed = Array.from({ length: 10 }, (_, index) =>
-    slide({
-      number: index + 1,
-      archetype: "worked_example",
-      ...(index < 3 ? { required_visual: "the split" } : {}),
-    }));
-  assert.doesNotMatch(messages(critiqueDeck(deck(mixed))), /could carry a picture plan one/);
+test("a code-heavy deck is not called prose-heavy for being code-heavy", () => {
+  // A code block, a derivation and a comparison matrix are objects, not prose.
+  const technical = Array.from({ length: 10 }, (_, index) =>
+    slide({ number: index + 1, archetype: index % 2 ? "algorithm" : "structured_comparison" }));
+  const found = messages(critiqueDeck(deck(technical)));
+  assert.doesNotMatch(found, /carried by prose/);
+  // But nothing is drawn either, and that is worth saying on its own.
+  assert.match(found, /no slide in this deck plans a drawn figure/);
 });
 
+test("planning pictures across the deck passes both checks", () => {
+  const drawn = Array.from({ length: 10 }, (_, index) =>
+    slide({ number: index + 1, archetype: "worked_example", required_visual: "the split" }));
+  const found = messages(critiqueDeck(deck(drawn)));
+  assert.doesNotMatch(found, /carried by prose/);
+  assert.doesNotMatch(found, /plans a drawn figure/);
+});
 test("a seminar on a primary source is not asked to draw one", () => {
   // Text-by-nature archetypes are out of the denominator, or a reading-led
   // session would fail for being a reading-led session.

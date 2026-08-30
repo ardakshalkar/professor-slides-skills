@@ -49,9 +49,10 @@ slides:
 
   - number: 6
     title: Reading two curves
-    archetype: worked_example
+    archetype: visual_comparison
     minutes: 18
     purpose: the step people trip on — which gap is the diagnostic one
+    required_visual: two runs, training against validation, with the gap marked
 
   - number: 7
     title: Which score do you believe?
@@ -72,6 +73,14 @@ slides:
     purpose: hand over to regularisation, and name the lab task
 
 figures:
+  MODULE-06-slides-fig-02-curves.svg:
+    title: Two training runs, compared by the gap between their curves
+    alt: >-
+      Two schematic plots of error against training epochs. In run A the
+      training curve falls to near zero while the validation curve turns upward
+      part way along, so the gap between them widens. In run B both curves fall
+      together and flatten close to one another, at a worse error than run A
+      reached.
   MODULE-06-slides-fig-01-split.svg:
     title: Train, validation and test split
     alt: >-

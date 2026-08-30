@@ -116,11 +116,17 @@ Two more from the outline that change what you write:
 
 This is the step most easily skipped and the one that changes a deck most.
 
+**Drawing is the default. Prose is the exception, and the exception needs a
+reason.**
+
 For every slide, before writing its prose: **what would this look like drawn?**
-Only when the honest answer is "worse than the sentence" does it stay a
-sentence. Left to itself an agent writes prose every time — prose is what it is
-fluent in — and the deck ends up with whatever pictures survived rather than
-the ones the content deserved.
+The sentence stays only when the honest answer is "worse than the sentence" —
+and "I could describe it in words" is not that answer. Almost anything can be
+described in words; the question is whether describing it beats showing it.
+
+Left to itself an agent writes prose every time, because prose is what it is
+fluent in, and the deck ends up with whatever pictures survived rather than the
+ones the content deserved.
 
 **A bulleted list of pipeline stages is a diagram somebody declined to draw.**
 So is a numbered list of steps, a paragraph comparing two approaches, and a

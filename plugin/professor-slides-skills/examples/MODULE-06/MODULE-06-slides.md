@@ -60,17 +60,11 @@ nothing; the pair of numbers tells you a great deal.
 
 ## Reading two curves
 
-Two runs on the same data, both plotted as training and validation error
-against the number of training epochs.
-
-**Run A** — training error falls to near zero, validation error bottoms out
-around epoch 12 and then climbs steadily. The gap widens. This model is
-memorising, and the useful model is the one from epoch 12, not the last one.
-
-**Run B** — both curves fall together and flatten, close to each other, at a
-much worse error than Run A ever reached on training data. No gap. This model
-is not overfitting; it is simply not learning enough, and the fix is a larger
-model or better features, not more regularisation.
+![Two schematic plots of error against training epochs. In run A the training
+curve falls to near zero while the validation curve turns upward part way along,
+so the gap between them widens. In run B both curves fall together and flatten
+close to one another, at a worse error than run A
+reached.](MODULE-06-slides-fig-02-curves.svg)
 
 The step people trip on is asking *which error is lower*. That is not the
 diagnostic. The diagnostic is **which way the gap is moving**.

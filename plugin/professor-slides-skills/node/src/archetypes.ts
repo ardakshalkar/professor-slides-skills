@@ -320,3 +320,23 @@ export const TEXT_CARRIED = new Set<string>([
 
 /** Archetypes that are a pause rather than new material. */
 export const RESET_ARCHETYPES = new Set<string>(["roadmap", "synthesis", "section_opener"]);
+
+/**
+ * Archetypes whose slide is carried by an object rather than by prose.
+ *
+ * A picture is the commonest such object, but not the only one: a code block, a
+ * derivation and a comparison matrix are all things the eye reads as structure
+ * rather than as sentences. Counting only pictures would tell a programming
+ * lecture that it is prose-heavy for being a programming lecture.
+ *
+ * Everything outside this set, and outside `TEXT_CARRIED`, is a slide the deck
+ * is asking the audience to read.
+ */
+export const OBJECT_CARRIED = new Set<string>([
+  ...Object.entries(ARCHETYPES)
+    .filter(([, archetype]) => archetype.visual === "dominant")
+    .map(([name]) => name),
+  "algorithm",
+  "derivation",
+  "structured_comparison",
+]);

@@ -152,16 +152,28 @@ grammar where a warning is not enough.
 
 ## Draw first, write second
 
-The rule below — that a text-only slide is legitimate — is true and stays. What
-was wrong was the *default*. Left to itself an agent reaches for prose every
+**Drawing is the default. Prose is the exception, and the exception needs a
+reason.**
+
+That is a deliberate reversal. Left to itself an agent reaches for prose every
 time, because prose is what it is fluent in, and the result is a deck where the
 pictures are whatever survived rather than whatever the content deserved. One
 real lecture deck measured against this carried a drawn figure on **7% of its
 slides** and was words-only on 36%.
 
 So the question is asked in the other order. Before writing a sentence for a
-slide, ask: **what would this look like drawn?** Only when the honest answer is
-"worse than the sentence" does it stay a sentence.
+slide, ask: **what would this look like drawn?** The sentence stays only when
+the honest answer is "worse than the sentence" — and "I could describe it in
+words" is not that answer. Almost anything can be described in words; the
+question is whether describing it is better than showing it.
+
+`pres outline check` measures this at the deck level and reports an outline
+where more than half the slides are carried by prose, or where nothing is drawn
+at all. A slide counts as carried when it plans a picture *or* when its
+archetype is an object in its own right — a code block, a derivation, a
+comparison matrix are all things the eye reads as structure. Counting pictures
+alone would tell a programming lecture it was prose-heavy for being a
+programming lecture.
 
 **Draw it when the content is:**
 

@@ -141,15 +141,16 @@ slides:
 
   - number: 6
     intent: apply
-    archetype: worked_example
+    archetype: visual_comparison
     title: Reading two curves
     minutes: 18
     purpose: the step people trip on — deciding which gap is the diagnostic one
-    text_roles: [headline, explanation, takeaway]
-    density: dense
+    text_roles: [annotation, claim]
+    density: sparse
     outcomes: [LO-02, LO-04]
     concepts: [CONCEPT-OVERFITTING]
     sources: [RES-442]
+    required_visual: two runs, training against validation, with the gap marked
 
   - number: 7
     intent: compare
