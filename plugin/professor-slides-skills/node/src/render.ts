@@ -66,6 +66,10 @@ const PAPER = "FFFFFF";
 const RULE = "C6CED6";
 const CODE_BG = "F2F4F7";
 const CODE_LINE = "E2E7ED";
+/** On the dark title ground: a third tier, quieter than the body text. */
+const DIM = "8A9AAD";
+/** The one accent, used for the title slide's rule and nothing else. */
+const ACCENT = "7E9CC4";
 
 // --- the typefaces ----------------------------------------------------------
 // Chosen for what is *present on the lecture-room machine*, not for what looks
@@ -285,25 +289,76 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     };
 
     if (isTitleSlide) {
-      cursor = 1.9;
-      for (const block of blocks) {
-        if (block.kind === "heading") {
-          const height = textHeight(block.text, 46, 9.0, 1.15);
-          slide.addText(block.text, {
-            x: MARGIN, y: cursor, w: 9.6, h: height,
-            fontFace: HEAD_FONT, fontSize: 46, bold: true, color: PAPER,
-            lineSpacingMultiple: 1.05, margin: 0,
-          });
-          advance(height, 0.5);
-        } else if (block.kind === "paragraph") {
-          const height = textHeight(block.text, 16, 10.0);
-          slide.addText(runs(block.text, { color: LIGHT }), {
-            x: MARGIN, y: cursor, w: 10.0, h: height,
-            fontFace: BODY_FONT, fontSize: 16, margin: 0,
-          });
-          advance(height, 0.28);
-        }
+      // The title slide is built rather than flowed, because it is the one
+      // slide with no content to flow — it is an identity card, and the
+      // convention for those is settled: a title that dominates by size,
+      // weight and contrast, a secondary line, and details that stay small and
+      // out of the way. Three tiers, told apart by more than point size.
+      //
+      // The version this replaces stacked all three at the same size and the
+      // same left edge in the top third, leaving two thirds of the slide empty
+      // — which reads as a slide that was cut off rather than composed.
+      const heading = blocks.find((block) => block.kind === "heading");
+      const paragraphs = blocks.filter((block) => block.kind === "paragraph");
+      // The first line under a lecture title is conventionally its identity —
+      // course, unit, week — so it is set as a kicker *above* the title, small
+      // and letterspaced, where that convention puts it.
+      const [kicker, ...body] = paragraphs;
+
+      const TITLE_W = 10.6;
+      const BODY_W = 8.8;
+      const titleText = heading?.kind === "heading" ? heading.text : context.title;
+      const titleH = textHeight(plain(titleText), 46, TITLE_W, 1.12);
+      const kickerH = kicker ? textHeight(plain(kicker.text), 14, TITLE_W, 1.2) : 0;
+      const bodyHeights = body.map((block) => textHeight(block.text, 18, BODY_W, 1.3));
+      const bodyH = bodyHeights.reduce((sum, height) => sum + height + 0.24, 0);
+
+      // Set on the rule of thirds rather than dead centre: the optical centre
+      // of a block sits above its geometric one, so centring it exactly reads
+      // as slightly low.
+      const total = kickerH + 0.24 + titleH + 0.36 + (body.length ? 0.32 + bodyH : 0);
+      let y = Math.max(1.1, (SLIDE_H - total) / 2 - 0.35);
+
+      if (kicker) {
+        slide.addText(plain(kicker.text), {
+          x: MARGIN, y, w: TITLE_W, h: kickerH,
+          fontFace: BODY_FONT, fontSize: 14, bold: true, color: DIM,
+          charSpacing: 1.4, margin: 0,
+        });
+        y += kickerH + 0.24;
       }
+
+      slide.addText(plain(titleText), {
+        x: MARGIN, y, w: TITLE_W, h: titleH,
+        fontFace: HEAD_FONT, fontSize: 46, bold: true, color: PAPER,
+        lineSpacingMultiple: 1.12, margin: 0,
+      });
+      y += titleH + 0.36;
+
+      // A short rule, not a full-width one: it separates the title from what
+      // follows without drawing a line across the whole slide.
+      slide.addShape(pres.ShapeType.line, {
+        x: MARGIN, y, w: 2.4, h: 0,
+        line: { color: ACCENT, width: 2.5 },
+      });
+      y += 0.32;
+
+      body.forEach((block, position) => {
+        slide.addText(runs(block.text, { color: LIGHT }), {
+          x: MARGIN, y, w: BODY_W, h: bodyHeights[position]!,
+          fontFace: BODY_FONT, fontSize: 18, lineSpacingMultiple: 1.3, margin: 0,
+        });
+        y += bodyHeights[position]! + 0.24;
+      });
+
+      if (y > SLIDE_H) {
+        warnings.push(
+          `slide ${index + 1}: the title slide runs to ${y.toFixed(2)}" of ${SLIDE_H}". ` +
+          "A title slide carries a title, an identity line and one sentence; anything more belongs " +
+          "on the slide after it.",
+        );
+      }
+
       const note = noteFor(index);
       if (note) slide.addNotes(note);
       continue;

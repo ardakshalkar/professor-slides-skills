@@ -90,6 +90,39 @@ half-converted formula is worse than an absent one. The two honest ways out are
 to write the expression in a form Unicode can set, or to draw it as a figure and
 link it like any other picture.
 
+## The title slide
+
+It is the one slide with no content to flow, so it is composed rather than
+flowed. The convention for an identity card is settled, and three tiers is the
+whole of it:
+
+| Tier | What | Set as |
+| --- | --- | --- |
+| kicker | course, unit, week | 14pt sans, bold, letterspaced, dimmed |
+| title | the session | 46pt serif, bold, white — it must dominate |
+| — | a short rule | 2.4in, the one accent colour in the deck |
+| body | one sentence: what the session leaves them able to do | 18pt sans, light |
+
+Three points behind that shape:
+
+- **The title dominates by size, weight *and* contrast**, not size alone. Set
+  three lines at the same weight and colour and the audience has to read all
+  three to find out which one matters.
+- **The identity line goes above the title**, not below it. That is where a
+  reader looks for context, and it lets the title be the largest thing on the
+  slide without a competing line underneath.
+- **The block sits above centre**, on the upper third rather than dead middle:
+  the optical centre of a block is above its geometric one, so centring it
+  exactly reads as slightly low.
+
+What the renderer takes from the markdown: the `#` heading is the title, the
+**first** paragraph is the kicker, and the rest is the body. So write the course
+line first and the objective second.
+
+A title slide carrying more than that is warned about. A title, an identity
+line and one sentence is the whole job; anything else belongs on the slide
+after it.
+
 ## Sizes, for reference
 
 | | Size | |
@@ -111,3 +144,7 @@ link it like any other picture.
 - [Aptos vs Calibri: Microsoft's New Default Font Compared](https://madegooddesigns.com/aptos-vs-calibri/)
 - [13 Best Fonts for Coding](https://snappify.com/blog/best-fonts-for-coding)
 - [25 Best Coding Fonts for Developers in 2026](https://lexingtonthemes.com/blog/best-coding-fonts-2026)
+- [Title Slide PowerPoint: Design, Layout, and Best Practices — Deckary](https://deckary.com/blog/title-slide-powerpoint)
+- [PowerPoint Title Slide Examples — SlideModel](https://slidemodel.com/powerpoint-title-slide-examples/)
+- [Lecture Presentation Slides — Sheridan Center, Brown University](https://sheridan.brown.edu/resources/classroom-practices/lecture-presentation-slides)
+- [Slide Layout, and the rule of thirds — Lumen Learning](https://courses.lumenlearning.com/wm-publicspeaking/chapter/slide-layout/)
