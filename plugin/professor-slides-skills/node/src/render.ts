@@ -30,7 +30,7 @@ import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkDeck, errorsIn, describeProblems } from "./check.ts";
-import { CHAR_WIDTH, columnWidths, plain, tableRowHeights, textHeight, type Block } from "./deck.ts";
+import { CHAR_WIDTH, columnWidths, plain, tableRowHeights, textHeight, unescape, type Block } from "./deck.ts";
 import { creditForFigure, type DeckPlan } from "./plan.ts";
 
 const require = createRequire(import.meta.url);
@@ -106,10 +106,10 @@ function runs(text: string, base: Record<string, unknown>): unknown[] {
     .split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
     .filter(Boolean)
     .map((part) => {
-      if (part.startsWith("**")) return { text: part.slice(2, -2), options: { ...base, bold: true } };
-      if (part.startsWith("*")) return { text: part.slice(1, -1), options: { ...base, italic: true } };
+      if (part.startsWith("**")) return { text: unescape(part.slice(2, -2)), options: { ...base, bold: true } };
+      if (part.startsWith("*")) return { text: unescape(part.slice(1, -1)), options: { ...base, italic: true } };
       if (part.startsWith("`")) return { text: part.slice(1, -1), options: { ...base, fontFace: MONO_FONT } };
-      return { text: part, options: { ...base } };
+      return { text: unescape(part), options: { ...base } };
     });
 }
 

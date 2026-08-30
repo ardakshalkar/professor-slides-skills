@@ -16,6 +16,7 @@ import {
   columnWidths,
   tableRowHeights,
   textHeight,
+  plain,
 } from "../src/deck.ts";
 
 // The table that broke: six columns, one of them a 79-character headline.
@@ -94,4 +95,16 @@ test("a row with a wrapping cell is measured taller than one without", () => {
 test("charsPerLine never returns something unusable", () => {
   assert.ok(charsPerLine(0.01, 40, CHAR_WIDTH.mono) >= 4);
   assert.ok(charsPerLine(10, 15, CHAR_WIDTH.proportional) > 40);
+});
+
+test("markdown escapes are resolved, not printed", () => {
+  // A footnote marker in a table of prices: the author wrote \* meaning a
+  // literal asterisk, and the backslash was going up on the slide.
+  assert.equal(plain(String.raw`0.75\*`), "0.75*");
+  assert.equal(plain(String.raw`a \| b`), "a | b");
+  // A backslash before something that is not an escapable character is left
+  // alone, so a Windows path in a slide keeps its separators.
+  assert.equal(plain(String.raw`C:\path\to`), String.raw`C:\path\to`);
+  // Emphasis still works, and is still stripped by plain().
+  assert.equal(plain("**bold** and *italic*"), "bold and italic");
 });

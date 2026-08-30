@@ -180,10 +180,22 @@ export function parseBlocks(slide: string): Block[] {
  * alone and removes emphasis wherever it really is emphasis.
  */
 export const plain = (text: string): string =>
-  text
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1");
+  unescape(
+    text
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/`([^`]+)`/g, "$1"),
+  );
+
+/**
+ * Markdown backslash escapes, resolved.
+ *
+ * A footnote marker written `0.75\*` is an author saying "a literal asterisk,
+ * not emphasis". Leaving the backslash in placed it on the slide, where in a
+ * table of prices it reads as a typo rather than as a footnote.
+ */
+export const unescape = (text: string): string =>
+  text.replace(/\\([\\`*_{}[\]()#+\-.!|<>~])/g, "$1");
 
 /** The title a slide shows: its first heading, or failing that its first line. */
 export function slideTitle(blocks: Block[]): string {
