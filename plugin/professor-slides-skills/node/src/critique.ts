@@ -41,6 +41,9 @@ const TEXT_ONLY_RUN = 3;
 /** How many slides of new material before the learner needs their position back. */
 const SLIDES_BEFORE_RESET = 9;
 
+/** Roles that belong to any slide, whatever it is teaching. See the check below. */
+const STRUCTURAL_ROLES = new Set(["headline", "source"]);
+
 /**
  * The grammar of one slide: is its archetype real, and does its text do what
  * that archetype is for?
@@ -82,7 +85,19 @@ export function checkSlideGrammar(slide: OutlineSlide): Problem[] {
       ));
       continue;
     }
-    if (!archetype.roles.includes(role)) {
+    // Two roles are structural rather than pedagogical, and neither is ever
+    // off-grammar.
+    //
+    // `headline`: every slide has a title and a title is a headline, so
+    // flagging it says only that the slide has one — and eleven of eighteen
+    // archetypes omit it from their role list while describing it in their own
+    // composition ("the headline carries the claim").
+    //
+    // `source`: any slide may say where its material came from, and this
+    // plugin *requires* it on any slide carrying a figure with a licence. A
+    // vocabulary that warns about the attribution it also enforces teaches the
+    // professor to skim past the warnings that mean something.
+    if (!STRUCTURAL_ROLES.has(role) && !archetype.roles.includes(role)) {
       problems.push(warning(
         `${where}: ${role} text on a '${slide.archetype}' slide, which is for ` +
         `${archetype.roles.join(", ")}. ${archetype.composition}.`,

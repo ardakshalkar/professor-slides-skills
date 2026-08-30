@@ -24,7 +24,7 @@
  * professor decides. What it must not do is stay quiet.
  */
 
-import { ARCHETYPES, DENSITY } from "./archetypes.ts";
+import { ARCHETYPES, DENSITY, type Density } from "./archetypes.ts";
 import { plain, type Block } from "./deck.ts";
 import type { DeckPlan, Problem } from "./plan.ts";
 
@@ -112,7 +112,15 @@ export function checkDensity(slides: Block[][], plan: DeckPlan): Problem[] {
     const blocks = slides[spec.number - 1];
     if (!blocks) continue;
 
-    const band = DENSITY[archetype.density];
+    // A slide may declare its own band, and when it does that is the promise
+    // to measure against. The archetype's density is a default for generation,
+    // not a ceiling on what the professor is allowed to plan — an exit ticket
+    // carrying four questions is a dense `activity` on purpose, and it says so
+    // in the outline. Overriding it is an explicit, recorded decision; the
+    // silence that follows is the decision being honoured, not a check evaded.
+    const declared = spec.density as Density | undefined;
+    const band = (declared && DENSITY[declared]) || DENSITY[archetype.density];
+    const named = (declared && DENSITY[declared]) ? declared : archetype.density;
     const measured = measureText(blocks);
     const ceiling = Math.round(band.words[1] * SLACK);
     if (measured.words <= ceiling) continue;
@@ -131,7 +139,7 @@ export function checkDensity(slides: Block[][], plan: DeckPlan): Problem[] {
     problems.push({
       severity: "warning",
       message:
-        `slide ${spec.number} is planned '${spec.archetype}' (${archetype.density}: ` +
+        `slide ${spec.number} is planned '${spec.archetype}' (${named}: ` +
         `${band.words[0]}–${band.words[1]} words) and carries ${measured.words}` +
         (measured.paragraphs > 1 ? ` in ${measured.paragraphs} paragraphs` : "") +
         (drawn ? ", alongside its figure" : ", with nothing drawn") +

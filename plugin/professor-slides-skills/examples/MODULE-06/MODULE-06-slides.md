@@ -24,8 +24,7 @@ MODULE-06 · CSS-4008 2026-FALL · 5 October
 
 ## The number that meant nothing
 
-Last week's report ended with a figure, and most of them were around 0.97 — every
-one of them measured on the same rows the model had just been fitted to.
+Last week: 0.97, measured on the rows the model had just been fitted to.
 
 A score on the data you fitted to answers *did this model memorise these rows*.
 It did. That is what fitting is.
@@ -44,12 +43,6 @@ tuning](MODULE-06-slides-fig-01-split.svg)
 
 **Overfitting** is not "the score is too high". It is a model having captured
 structure that is in *this sample* and not in the population it was drawn from.
-
-The score is only the symptom, and it is a symptom you can see:
-
-- Training performance keeps improving
-- Held-out performance stops improving, then gets worse
-- The gap between them is what grows
 
 A model can overfit at 0.62 and generalise at 0.97. The number alone tells you
 nothing; the pair of numbers tells you a great deal.

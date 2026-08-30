@@ -62,9 +62,14 @@ slides:
 
   - number: 8
     title: Check yourself
-    archetype: question
+    archetype: activity
     minutes: 12
-    purpose: one question per new concept; leave time for the answers
+    # Not a `question` slide. That archetype is one large question and the
+    # whitespace around it; this is two written problems the room works through,
+    # which is an activity — and an activity slide carrying two of them is
+    # moderate on purpose, so it says so rather than tripping the density check.
+    density: moderate
+    purpose: one problem per new concept; leave time for the answers
 
   - number: 9
     title: Next

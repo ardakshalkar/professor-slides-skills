@@ -109,3 +109,34 @@ test("an archetype the vocabulary does not have is left to the outline check", (
   ]];
   assert.deepEqual(checkDensity(blocks, planFor(2, "not_an_archetype")), []);
 });
+
+test("a slide that declares its own density is measured against that", () => {
+  // An exit ticket with four questions is a dense `activity` on purpose. The
+  // archetype's band is a default for generation, not a limit on what the
+  // professor may plan — and the override is recorded in the approved outline.
+  const blocks: Block[][] = [[], [
+    { kind: "heading", level: 2, text: "Exit ticket" },
+    { kind: "list", ordered: true, items: [
+      Array.from({ length: 15 }, () => "word").join(" "),
+      Array.from({ length: 15 }, () => "word").join(" "),
+      Array.from({ length: 15 }, () => "word").join(" "),
+    ] },
+  ]];
+  const plan = (density?: string): DeckPlan =>
+    ({ slides: [{ number: 2, title: "Exit ticket", archetype: "activity", ...(density ? { density } : {}) }] }) as unknown as DeckPlan;
+
+  // 45 words: over `activity`'s sparse band, inside a declared moderate one.
+  assert.equal(checkDensity(blocks, plan()).length, 1);
+  assert.deepEqual(checkDensity(blocks, plan("moderate")), []);
+});
+
+test("a declared density the vocabulary does not have falls back to the archetype", () => {
+  const blocks: Block[][] = [[], [
+    { kind: "heading", level: 2, text: "Title" },
+    { kind: "paragraph", text: Array.from({ length: 100 }, () => "word").join(" ") },
+  ]];
+  const plan = { slides: [{ number: 2, title: "t", archetype: "roadmap", density: "enormous" }] } as unknown as DeckPlan;
+  const problems = checkDensity(blocks, plan);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0].message, /sparse: 5–25 words/);
+});
