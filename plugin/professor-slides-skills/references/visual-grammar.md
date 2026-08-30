@@ -150,6 +150,48 @@ check` treats an `explanation` or `takeaway` text role on a `question` or
 `activity` slide as an **error** for this reason — it is the one place in the
 grammar where a warning is not enough.
 
+## Draw first, write second
+
+The rule below — that a text-only slide is legitimate — is true and stays. What
+was wrong was the *default*. Left to itself an agent reaches for prose every
+time, because prose is what it is fluent in, and the result is a deck where the
+pictures are whatever survived rather than whatever the content deserved. One
+real lecture deck measured against this carried a drawn figure on **7% of its
+slides** and was words-only on 36%.
+
+So the question is asked in the other order. Before writing a sentence for a
+slide, ask: **what would this look like drawn?** Only when the honest answer is
+"worse than the sentence" does it stay a sentence.
+
+**Draw it when the content is:**
+
+| Shape | What to draw |
+| --- | --- |
+| A sequence or pipeline | boxes left-to-right, arrows, short step labels |
+| Parts and how they interact | a system diagram, labels on the parts |
+| A comparison of two or three things | them side by side, at equal weight, parallel labels |
+| A quantity, a proportion, a spread | a chart — from a source you can cite |
+| A structure, hierarchy or dependency | a tree or a graph |
+| A before and after | the pair, same scale, same crop |
+| A thing with named parts | the object, annotated in place |
+| A process the learner will follow | the steps as a diagram, not as a numbered list |
+
+That table covers most of a technical lecture. A bulleted list of four pipeline
+stages is a diagram somebody declined to draw.
+
+**Leave it as text when the content is:**
+
+- a **definition** — the words are the thing
+- a **question** to the room, where whitespace is the point
+- a **primary source** being analysed
+- a **claim** that needs no evidence beyond itself
+- a **source or attribution** line
+- an **equation** — already a visual object, and set as one
+
+**And never draw** what you cannot ground: a chart of this class's results that
+no command produced, a chart of external data with no citable source, a diagram
+of a system the course has not described. Those stay words, and say so.
+
 ## Text-only slides are legitimate
 
 The correction that needs correcting. Some material is about establishing

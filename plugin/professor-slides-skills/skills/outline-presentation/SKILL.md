@@ -202,8 +202,16 @@ matter most:
   answer. `pres outline check` refuses an `explanation` or `takeaway` role on a
   `question` or `activity` slide — it is the one grammar violation that is an
   error rather than a warning.
+- **Decide to draw here, not later.** For each slide ask what it would look like
+  drawn, and set `required_visual` whenever the answer is better than the
+  sentence — a sequence, interacting parts, a comparison, a structure, a
+  before-and-after, an annotated object, a quantity you can cite. This is the
+  cheap moment to decide it: changing the plan costs a line, changing a written
+  deck costs the slide. A deck that reaches `/build-presentation` with almost no
+  `required_visual` will come back almost entirely prose.
 - **Text-only slides are legitimate.** Never *every slide needs an image*;
-  always *every slide needs an information carrier*.
+  always *every slide needs an information carrier* — and the carrier is a
+  picture more often than a first draft assumes.
 - **Reuse the visual anchor.** One diagram with the emphasis moving beats five
   unrelated diagrams, every time. Set `visual_anchor` and `focus`.
 - **Density is a mode**, not a word cap: `sparse`, `moderate`, `dense`.

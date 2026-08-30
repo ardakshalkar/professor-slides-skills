@@ -254,6 +254,33 @@ export function critiqueDeck(outline: Outline): Problem[] {
     }
   }
 
+  // How much of the deck is carried by a picture.
+  //
+  // Not a quota — a floor, and a low one. The failure it catches is the deck
+  // that was written rather than designed: prose is what a generator is fluent
+  // in, so left alone it writes, and the pictures end up being whatever
+  // survived rather than what the content deserved. A real lecture deck
+  // measured against this carried a drawn figure on 7% of its slides.
+  //
+  // Slides whose archetype is text by nature are excluded from the
+  // denominator, or a seminar built on a primary source would fail for being a
+  // seminar built on a primary source.
+  const canCarryVisual = slides.filter(
+    (slide) => !slide.archetype || !TEXT_CARRIED.has(slide.archetype),
+  );
+  const drawn = canCarryVisual.filter((slide) => slide.required_visual ?? slide.visual_anchor);
+  if (canCarryVisual.length >= 8) {
+    const share = drawn.length / canCarryVisual.length;
+    if (share < 0.25) {
+      problems.push(warning(
+        `${drawn.length} of ${canCarryVisual.length} slides that could carry a picture plan one ` +
+        `(${Math.round(share * 100)}%). Ask of each remaining slide what it would look like drawn — ` +
+        "a bulleted list of pipeline stages is a diagram somebody declined to draw. See " +
+        "references/visual-grammar.md, 'Draw first, write second'.",
+      ));
+    }
+  }
+
   // A deck that never asks the room anything.
   if (slides.length >= 6 && !slides.some((slide) =>
     slide.archetype === "question" || slide.archetype === "activity" ||

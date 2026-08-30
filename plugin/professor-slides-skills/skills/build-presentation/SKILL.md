@@ -112,6 +112,31 @@ Two more from the outline that change what you write:
 - **`delivery_dependency: high`** — the slide is deliberately incomplete without
   the professor talking over it. Do not fill it in.
 
+### Ask what the slide looks like drawn, before writing a word of it
+
+This is the step most easily skipped and the one that changes a deck most.
+
+For every slide, before writing its prose: **what would this look like drawn?**
+Only when the honest answer is "worse than the sentence" does it stay a
+sentence. Left to itself an agent writes prose every time — prose is what it is
+fluent in — and the deck ends up with whatever pictures survived rather than
+the ones the content deserved.
+
+**A bulleted list of pipeline stages is a diagram somebody declined to draw.**
+So is a numbered list of steps, a paragraph comparing two approaches, and a
+sentence describing what a structure contains.
+
+Draw it when the content is a sequence, a set of interacting parts, a
+comparison, a structure, a before-and-after, an object with named parts, or a
+quantity you can cite. Leave it as text when it is a definition, a question, a
+primary source, a bare claim, a source line, or an equation.
+`${CLAUDE_PLUGIN_ROOT}/references/visual-grammar.md` has the table and the
+reasons.
+
+When you do draw, it is a hand-authored SVG committed beside the deck — the
+figure rules below still apply in full, and a diagram you cannot ground is still
+one you do not draw.
+
 ### How to write the words
 
 `${CLAUDE_PLUGIN_ROOT}/references/text-style.md` in full. The three that change

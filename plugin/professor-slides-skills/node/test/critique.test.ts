@@ -167,3 +167,29 @@ test("the same deck as teaching material says nothing about it", () => {
   ));
   assert.doesNotMatch(messages(problems), /output_mode is handout/);
 });
+
+test("a deck that plans almost no pictures is reported", () => {
+  // Ten slides that could each carry a picture, and none does. This is the
+  // shape a generator produces when left to write rather than to design.
+  const prose = Array.from({ length: 10 }, (_, index) =>
+    slide({ number: index + 1, archetype: index % 2 ? "worked_example" : "system_diagram" }));
+  assert.match(messages(critiqueDeck(deck(prose))), /could carry a picture plan one/);
+});
+
+test("planning pictures on a quarter of them is enough to pass", () => {
+  const mixed = Array.from({ length: 10 }, (_, index) =>
+    slide({
+      number: index + 1,
+      archetype: "worked_example",
+      ...(index < 3 ? { required_visual: "the split" } : {}),
+    }));
+  assert.doesNotMatch(messages(critiqueDeck(deck(mixed))), /could carry a picture plan one/);
+});
+
+test("a seminar on a primary source is not asked to draw one", () => {
+  // Text-by-nature archetypes are out of the denominator, or a reading-led
+  // session would fail for being a reading-led session.
+  const seminar = Array.from({ length: 10 }, (_, index) =>
+    slide({ number: index + 1, archetype: index % 2 ? "primary_source" : "question", text_roles: ["question"] }));
+  assert.doesNotMatch(messages(critiqueDeck(deck(seminar))), /could carry a picture plan one/);
+});
