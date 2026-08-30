@@ -157,6 +157,24 @@ export interface DeckPlan extends Plan {
    * says which slide they mean.
    */
   slide_numbers?: boolean;
+  /**
+   * What the title slide carries besides its words.
+   *
+   * Both are files beside the deck, named by the professor. Neither is ever
+   * searched for or invented: a decorative title image is fine and is the one
+   * place the figure rules allow a picture that carries no information, but an
+   * institutional mark is a trademark question rather than a licence one, and
+   * this plugin answers neither. It places the mark somebody pointed it at.
+   *
+   * An `image` that came from `pres find-image` needs its `figures` entry like
+   * any other found picture, and its attribution is enforced the same way.
+   */
+  title_slide?: {
+    image?: string;
+    image_alt?: string;
+    logo?: string;
+    logo_alt?: string;
+  };
   slides: OutlineSlide[];
   figures?: Record<string, FigureRecord>;
 }

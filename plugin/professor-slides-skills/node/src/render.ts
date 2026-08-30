@@ -305,10 +305,58 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
       // and letterspaced, where that convention puts it.
       const [kicker, ...body] = paragraphs;
 
-      const TITLE_W = 10.6;
-      const BODY_W = 8.8;
+      // An optional picture down the right, and an optional institutional mark.
+      // Both are supplied by the professor in the plan — never searched for and
+      // never invented. A logo especially: trademark is a separate question
+      // from licence, and this plugin answers neither, so the only mark it will
+      // place is one somebody pointed it at.
+      const decor = context.plan.title_slide ?? {};
+      const imagePath = decor.image ? join(context.materialsDir, decor.image) : null;
+      const hasImage = Boolean(imagePath && existsSync(imagePath));
+      if (decor.image && !hasImage) {
+        warnings.push(`slide 1: title_slide.image ${decor.image} is not beside the deck; left off`);
+      }
+      const logoPath = decor.logo ? join(context.materialsDir, decor.logo) : null;
+      const hasLogo = Boolean(logoPath && existsSync(logoPath));
+      if (decor.logo && !hasLogo) {
+        warnings.push(`slide 1: title_slide.logo ${decor.logo} is not beside the deck; left off`);
+      }
+
+      // With a picture down the right the text column narrows; without one it
+      // has the slide. The title is set larger than it was — at 46pt on a 13"
+      // slide it did not dominate, and dominating is a title slide's only job.
+      const PANEL_W = hasImage ? 5.1 : 0;
+      const COLUMN = SLIDE_W - PANEL_W - MARGIN * 2;
+      const TITLE_SIZE = hasImage ? 48 : 56;
+      const TITLE_W = COLUMN;
+      const BODY_W = Math.min(COLUMN, 8.8);
+
+      if (hasImage) {
+        // Bled to the right edge, cover-cropped so it never distorts.
+        const png = join(context.outDir, `${context.name}-title.png`);
+        await sharp(imagePath!)
+          .resize({
+            width: Math.round(PANEL_W * 96 * 2),
+            height: Math.round(SLIDE_H * 96 * 2),
+            fit: "cover",
+          })
+          .png()
+          .toFile(png);
+        slide.addImage({
+          path: png,
+          x: SLIDE_W - PANEL_W, y: 0, w: PANEL_W, h: SLIDE_H,
+          altText: decor.image_alt ?? "Title slide illustration.",
+        });
+        const credit = creditForFigure(figures[decor.image!], decor.image!);
+        if (credit) {
+          slide.addText(credit, {
+            x: SLIDE_W - PANEL_W, y: SLIDE_H - 0.34, w: PANEL_W - 0.16, h: 0.24,
+            fontFace: BODY_FONT, fontSize: 9, color: PAPER, align: "right", margin: 0,
+          });
+        }
+      }
       const titleText = heading?.kind === "heading" ? heading.text : context.title;
-      const titleH = textHeight(plain(titleText), 46, TITLE_W, 1.12);
+      const titleH = textHeight(plain(titleText), TITLE_SIZE, TITLE_W, 1.12);
       const kickerH = kicker ? textHeight(plain(kicker.text), 14, TITLE_W, 1.2) : 0;
       const bodyHeights = body.map((block) => textHeight(block.text, 18, BODY_W, 1.3));
       const bodyH = bodyHeights.reduce((sum, height) => sum + height + 0.24, 0);
@@ -330,7 +378,7 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
 
       slide.addText(plain(titleText), {
         x: MARGIN, y, w: TITLE_W, h: titleH,
-        fontFace: HEAD_FONT, fontSize: 46, bold: true, color: PAPER,
+        fontFace: HEAD_FONT, fontSize: TITLE_SIZE, bold: true, color: PAPER,
         lineSpacingMultiple: 1.12, margin: 0,
       });
       y += titleH + 0.36;
@@ -350,6 +398,22 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
         });
         y += bodyHeights[position]! + 0.24;
       });
+
+      // The institutional mark, bottom left, small. Placed last so it cannot
+      // push the text block around, and sized by height so a wide or a square
+      // logo both come out looking deliberate.
+      if (hasLogo) {
+        const meta = await sharp(logoPath!).metadata();
+        const height = 0.5;
+        const width = height * ((meta.width ?? 1) / (meta.height ?? 1));
+        const png = join(context.outDir, `${context.name}-logo.png`);
+        await sharp(logoPath!).resize({ height: Math.round(height * 96 * 3) }).png().toFile(png);
+        slide.addImage({
+          path: png,
+          x: MARGIN, y: SLIDE_H - height - 0.6, w: width, h: height,
+          altText: decor.logo_alt ?? "Institutional logo.",
+        });
+      }
 
       if (y > SLIDE_H) {
         warnings.push(

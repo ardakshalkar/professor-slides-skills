@@ -123,6 +123,34 @@ A title slide carrying more than that is warned about. A title, an identity
 line and one sentence is the whole job; anything else belongs on the slide
 after it.
 
+### A picture and a mark
+
+Both optional, both named in the plan, both files beside the deck:
+
+```yaml
+title_slide:
+  image: MODULE-06-title.jpg
+  image_alt: An empty lecture theatre seen from the back row.
+  logo: sdu-logo.png
+  logo_alt: SDU University logo.
+```
+
+The image bleeds down the right of the slide, cover-cropped so it never
+distorts, and the text column narrows to suit — the title drops from 56pt to
+48pt and still dominates. The logo sits bottom left at half an inch tall, sized
+by height so a wide mark and a square one both look deliberate.
+
+**Neither is ever searched for or invented by the skill.** A decorative title
+image is fine — it is the one place the figure rules allow a picture that
+carries no information — and `pres find-image` will find you an openly-licensed
+one, with its attribution enforced on the title slide exactly as anywhere else.
+
+A **logo is different and the rule is stricter**: an institutional or commercial
+mark is a trademark question rather than a licence one, and this plugin answers
+neither. It will place a mark you point it at, from a file you supply. It will
+not go and find your university's logo, because whether you may put it on a deck
+is not a question a search result can answer.
+
 ## Sizes, for reference
 
 | | Size | |
