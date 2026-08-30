@@ -365,6 +365,33 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     let lost: string | null = null;
     /** Set by the block loop before each `advance`, so the crossing can be named. */
     let placing: Block | null = null;
+    /**
+     * How much height the blocks after this one will need.
+     *
+     * An estimate, and deliberately a generous one: over-reserving costs a
+     * slightly smaller figure, under-reserving costs a figure drawn over the
+     * text. Paragraphs, lists and headings are measured with the numbers the
+     * cases below use; anything else gets a flat allowance, since a figure
+     * followed by a code block or a table is rare and the exact height matters
+     * less than not colliding with it.
+     */
+    const reserveAfter = (rest: Block[]): number => {
+      let total = 0;
+      for (const block of rest) {
+        switch (block.kind) {
+          case "paragraph": total += textHeight(block.text, 17, CONTENT_W) + 0.3; break;
+          case "quote": total += textHeight(block.text, 17, CONTENT_W - 0.6) + 0.3; break;
+          case "heading": total += 0.5; break;
+          case "list":
+            for (const item of block.items) total += textHeight(item, 17, CONTENT_W - 0.5) + 0.1;
+            total += 0.3;
+            break;
+          default: total += 1.8; break;
+        }
+      }
+      return total;
+    };
+
     const advance = (height: number, gap = 0.3): void => {
       bottom = cursor + height;
       cursor = bottom + gap;
@@ -515,7 +542,7 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
       continue;
     }
 
-    for (const block of blocks) {
+    for (const [position, block] of blocks.entries()) {
       placing = block;
       switch (block.kind) {
         case "heading": {
@@ -710,7 +737,14 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
           }
           // The SVG is the committed source; the PNG is a render, and it goes
           // to output/ with the deck rather than back beside the markdown.
-          const placedW = Math.min(CONTENT_W * 0.75, 8.6);
+          // The full content column, not three-quarters of it.
+          //
+          // The old cap was a fixed 8.6in, which for a wide diagram meant a
+          // 15px label rendered at about a tenth of an inch: legible on the
+          // laptop it was drawn on and gone from the fourth row. A figure that
+          // is short and wide should use the width it was drawn for, and the
+          // height clamp below still stops a tall one from taking the slide.
+          const placedW = CONTENT_W;
           // Figures are already named after their deck, so prefixing the deck
           // name again produced `MODULE-06-slides-MODULE-06-slides-fig-01-…`.
           // Not merely ugly: Windows still caps a path at 260 characters by
@@ -730,7 +764,11 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
             .toFile(png);
           let width = placedW;
           let height = width * (meta.height / meta.width);
-          const available = FLOOR - cursor - creditH;
+          // Room for what comes *after* the figure, too. Sizing against the
+          // floor alone let a full-height figure be drawn over the sentence
+          // that explained it — and the sentence is what tells the room what to
+          // notice, so it is not the part that should give way.
+          const available = FLOOR - cursor - creditH - reserveAfter(blocks.slice(position + 1));
           if (height > available) {
             height = available;
             width = height * (meta.width / meta.height);
