@@ -113,6 +113,26 @@ function runs(text: string, base: Record<string, unknown>): unknown[] {
     });
 }
 
+/**
+ * A block in a few words, for a warning a person has to act on.
+ */
+function describeBlock(block: Block): string {
+  const snip = (text: string): string => {
+    const flat = plain(text).replace(/\s+/g, " ").trim();
+    return flat.length > 54 ? `${flat.slice(0, 54)}…` : flat;
+  };
+  switch (block.kind) {
+    case "heading": return `the heading "${snip(block.text)}"`;
+    case "paragraph": return `the paragraph "${snip(block.text)}"`;
+    case "quote": return `the quotation "${snip(block.text)}"`;
+    case "math": return `the formula "${snip(block.text)}"`;
+    case "code": return `the code block starting "${snip(block.text.split(/\r?\n/)[0] ?? "")}"`;
+    case "list": return `the list ending "${snip(block.items[block.items.length - 1] ?? "")}"`;
+    case "table": return `the ${block.rows.length}-row table`;
+    case "image": return `the figure ${block.src}`;
+  }
+}
+
 interface RenderContext {
   materialsDir: string;
   outDir: string;
@@ -233,9 +253,18 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     // Whether this slide has had its title drawn. A slide may carry several
     // headings; only the first is the title.
     let titleDrawn = false;
+    /** The first block that crossed the bottom margin, described for the report. */
+    let lost: string | null = null;
+    /** Set by the block loop before each `advance`, so the crossing can be named. */
+    let placing: Block | null = null;
     const advance = (height: number, gap = 0.3): void => {
       bottom = cursor + height;
       cursor = bottom + gap;
+      // Blamed at the slide edge, not at the margin. A block that ends between
+      // the two is tight but visible; only past `SLIDE_H` is it actually gone,
+      // and naming the wrong block sends the professor to shorten something
+      // that was never the problem.
+      if (bottom > SLIDE_H && !lost && placing) lost = describeBlock(placing);
     };
 
     if (isTitleSlide) {
@@ -264,6 +293,7 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     }
 
     for (const block of blocks) {
+      placing = block;
       switch (block.kind) {
         case "heading": {
           // Only the first heading is the slide's title. Every later one is a
@@ -469,7 +499,16 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     }
 
     if (bottom > FLOOR) {
-      warnings.push(`slide ${index + 1} runs to ${bottom.toFixed(2)}" of ${FLOOR}" — shorten it or split it`);
+      // Naming what is lost, not only that something is. "Slide 29 runs to
+      // 7.86 inches" is a number to weigh up; "the paragraph 'Continued on the
+      // next slide…' is not on the slide" is a thing to go and fix, and it is
+      // the difference between a warning that gets read and one that does not.
+      warnings.push(
+        `slide ${index + 1} runs to ${bottom.toFixed(2)}" of ${FLOOR}"` +
+        (lost
+          ? ` — ${lost} is off the slide`
+          : " — into the bottom margin, still visible but tight"),
+      );
     }
 
     const note = noteFor(index);
