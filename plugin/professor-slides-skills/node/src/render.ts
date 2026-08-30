@@ -32,6 +32,7 @@ import { fileURLToPath } from "node:url";
 import { checkDeck, errorsIn, describeProblems } from "./check.ts";
 import { CHAR_WIDTH, columnWidths, plain, tableRowHeights, textHeight, unescape, type Block } from "./deck.ts";
 import { creditForFigure, type DeckPlan } from "./plan.ts";
+import { generateMissing, missingVisuals, type MissingVisual } from "./draft.ts";
 
 const require = createRequire(import.meta.url);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -141,8 +142,20 @@ interface RenderContext {
   materialsDir: string;
   outDir: string;
   name: string;
+  /**
+   * The deck name without `-draft`, used for every file *beside* the .pptx.
+   *
+   * Converted SVGs, the title picture and the logo are identical in both
+   * renders, so both point at one set. Prefixing them with the draft name
+   * instead produced `<deck>-draft-<deck>-fig-01.png` — a doubled name, twice
+   * the conversions, and on Windows a path that can pass 260 characters and
+   * simply fail to open.
+   */
+  assets: string;
   title: string;
   plan: DeckPlan;
+  /** Set only for `--draft`: the visuals the plan wants and the deck lacks. */
+  draft?: MissingVisual[];
 }
 
 async function build(slides: Block[][], context: RenderContext): Promise<{ file: string; warnings: string[] }> {
@@ -173,6 +186,75 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
     const archetype = archetypeOf(index);
     const slide = pres.addSlide();
     slide.background = { color: isTitleSlide ? INK : PAPER };
+
+    // Every draft slide says so, whichever layout it takes, so a draft can
+    // never be mistaken for the deck you present.
+    if (context.draft) {
+      slide.addText("DRAFT", {
+        x: MARGIN, y: SLIDE_H - 0.44, w: 1.2, h: 0.26,
+        fontFace: BODY_FONT, fontSize: 11, bold: true,
+        color: isTitleSlide ? ACCENT : PRIMARY, charSpacing: 1.6, margin: 0,
+      });
+    }
+
+    // What the plan wants here and the deck does not have. Read before the
+    // layout branches, because every branch has to be able to show it.
+    const wanted = context.draft?.find((visual) => visual.slide === index + 1);
+    /** The stand-in card, drawn at `top`; returns how tall it turned out. */
+    const placeholder = (top: number): number => {
+      const lines = [wanted!.required, ...(wanted!.prompt ? ["", `Prompt: ${wanted!.prompt}`] : [])]
+        .join("\n");
+      const height = Math.min(2.4, Math.max(1.3, textHeight(lines, 14, CONTENT_W - 1.4) + 0.9));
+      slide.addShape(pres.ShapeType.roundRect, {
+        x: MARGIN, y: top, w: CONTENT_W, h: height,
+        fill: { color: CODE_BG }, line: { color: ACCENT, width: 2, dashType: "dash" }, rectRadius: 0.06,
+      });
+      slide.addText("FIGURE TO DRAW", {
+        x: MARGIN + 0.35, y: top + 0.18, w: CONTENT_W - 0.7, h: 0.26,
+        fontFace: BODY_FONT, fontSize: 11, bold: true, color: PRIMARY, charSpacing: 1.2, margin: 0,
+      });
+      slide.addText(lines, {
+        x: MARGIN + 0.35, y: top + 0.5, w: CONTENT_W - 0.7, h: height - 0.68,
+        fontFace: BODY_FONT, fontSize: 14, color: MUTED, lineSpacingMultiple: 1.2, margin: 0,
+      });
+      return height;
+    };
+    /**
+     * Whatever the draft has for this slide, drawn at `top`, returning its
+     * height. One definition used by every layout — the first version had the
+     * generated branch in one path and the placeholder in another, so a
+     * generated picture reached the report and never reached the slide.
+     */
+    const showWanted = async (top: number): Promise<number> => {
+      if (!wanted?.generated) return placeholder(top);
+      const placedW = Math.min(CONTENT_W * 0.62, 7.2);
+      const png = join(context.outDir, `${context.name}-placed-${index + 1}.png`);
+      const meta = await sharp(wanted.generated)
+        .resize({ width: Math.round(placedW * 96 * 2) })
+        .png()
+        .toFile(png);
+      let width = placedW;
+      let height = width * (meta.height / meta.width);
+      // The caption sits under the picture and must clear the bottom margin too:
+      // measuring the room to the slide edge is what clipped it the first time.
+      const room = FLOOR - top - 0.34;
+      if (height > room) {
+        height = Math.max(1.0, room);
+        width = height * (meta.width / meta.height);
+      }
+      slide.addImage({
+        path: png,
+        x: (SLIDE_W - width) / 2, y: top, w: width, h: height,
+        altText: wanted.required,
+      });
+      // The same caption a professor-generated illustration gets anywhere else.
+      // A picture behind a lecturer is read as evidence unless it says otherwise.
+      slide.addText("Generated illustration. Not a photograph or a measurement.", {
+        x: (SLIDE_W - width) / 2, y: top + height + 0.04, w: width, h: 0.24,
+        fontFace: BODY_FONT, fontSize: 10, color: MUTED, margin: 0,
+      });
+      return height + 0.28;
+    };
 
     // Two archetypes whose layout *is* the teaching, so they are not flowed
     // like body copy. A question set in 17pt at the top of an otherwise empty
@@ -258,6 +340,11 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
           "which this archetype does not carry; it was left off",
         );
       }
+      // A planned visual has to show up here too. A question slide asking for
+      // one is unusual, but "unusual" is not a reason for the draft to go
+      // silently blank on it.
+      if (wanted) y += (await showWanted(y)) + 0.3;
+
       if (y > FLOOR) {
         warnings.push(`slide ${index + 1} runs to ${y.toFixed(2)}" of ${FLOOR}" — shorten it`);
       }
@@ -333,7 +420,7 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
 
       if (hasImage) {
         // Bled to the right edge, cover-cropped so it never distorts.
-        const png = join(context.outDir, `${context.name}-title.png`);
+        const png = join(context.outDir, `${context.assets}-title.png`);
         await sharp(imagePath!)
           .resize({
             width: Math.round(PANEL_W * 96 * 2),
@@ -406,7 +493,7 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
         const meta = await sharp(logoPath!).metadata();
         const height = 0.5;
         const width = height * ((meta.width ?? 1) / (meta.height ?? 1));
-        const png = join(context.outDir, `${context.name}-logo.png`);
+        const png = join(context.outDir, `${context.assets}-logo.png`);
         await sharp(logoPath!).resize({ height: Math.round(height * 96 * 3) }).png().toFile(png);
         slide.addImage({
           path: png,
@@ -633,7 +720,7 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
           const stem = block.src.replace(/\.[^.]+$/, "");
           const png = join(
             context.outDir,
-            `${stem.startsWith(context.name) ? stem : `${context.name}-${stem}`}.png`,
+            `${stem.startsWith(context.assets) ? stem : `${context.assets}-${stem}`}.png`,
           );
           const credit = creditForFigure(figures[block.src], block.src);
           const creditH = credit ? 0.3 : 0;
@@ -677,6 +764,13 @@ async function build(slides: Block[][], context: RenderContext): Promise<{ file:
           : " — into the bottom margin, still visible but tight"),
       );
     }
+
+    // --- the draft's stand-in for a picture that does not exist yet ---------
+    // Only in `--draft`. Either the image a configured generator produced, or a
+    // card saying what the picture must show and the prompt that would make it.
+    // The point is that the hole is *visible*: a planned visual with nothing in
+    // its place is invisible in the deck and buried in the plan.
+    if (wanted && !isTitleSlide) advance(await showWanted(cursor));
 
     // The slide number, bottom right, quiet.
     //
@@ -733,6 +827,8 @@ export interface RenderResult {
   pptx: string;
   pdf: string | null;
   warnings: string[];
+  /** Present for `--draft`: what is still to be drawn. */
+  missing?: MissingVisual[];
 }
 
 /**
@@ -744,7 +840,7 @@ export interface RenderResult {
  */
 export async function renderDeck(
   deckPath: string,
-  options: { outDir?: string; pdf?: boolean } = {},
+  options: { outDir?: string; pdf?: boolean; draft?: boolean } = {},
 ): Promise<RenderResult> {
   const checked = checkDeck(deckPath);
   const failures = errorsIn(checked.problems);
@@ -756,22 +852,42 @@ export async function renderDeck(
     );
   }
 
-  const name = deckPath.replace(/^.*[\\/]/, "").replace(/\.md$/i, "");
+  const base = deckPath.replace(/^.*[\\/]/, "").replace(/\.md$/i, "");
+  // A separate filename, always. A draft that overwrote the deck you present
+  // is the one mistake this feature must not make.
+  const name = options.draft ? `${base}-draft` : base;
   const outDir = resolve(options.outDir ?? join(process.cwd(), "output"));
   await mkdir(outDir, { recursive: true });
+
+  let draft: MissingVisual[] | undefined;
+  const draftWarnings: string[] = [];
+  if (options.draft) {
+    const found = missingVisuals(checked.slides, checked.plan);
+    const generated = generateMissing(found, outDir, base);
+    draft = generated.filled;
+    draftWarnings.push(...generated.warnings);
+  }
 
   const { file, warnings } = await build(checked.slides, {
     materialsDir: dirname(deckPath),
     outDir,
     name,
-    title: checked.plan.title ?? name,
+    assets: base,
+    title: checked.plan.title ?? base,
     plan: checked.plan,
+    ...(draft ? { draft } : {}),
   });
 
   const carried = [
+    ...draftWarnings,
     ...warnings,
     ...checked.problems.filter((problem) => problem.severity === "warning").map((problem) => problem.message),
   ];
 
-  return { pptx: file, pdf: options.pdf ? toPdf(file, outDir) : null, warnings: carried };
+  return {
+    pptx: file,
+    pdf: options.pdf ? toPdf(file, outDir) : null,
+    warnings: carried,
+    ...(draft ? { missing: draft } : {}),
+  };
 }

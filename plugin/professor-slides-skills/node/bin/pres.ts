@@ -23,6 +23,7 @@ import { checkDeck, describeProblems, errorsIn } from "../src/check.ts";
 import { describeResults, downloadImage, figureEntry, searchImages } from "../src/find-image.ts";
 import { checkOutline, loadOutline } from "../src/plan.ts";
 import { renderDeck } from "../src/render.ts";
+import { describeDraft } from "../src/draft.ts";
 import { describeProvenance, resolveCourse, type ResolveOptions } from "../src/source.ts";
 import type { Origin } from "../src/model.ts";
 
@@ -79,8 +80,12 @@ const USAGE = `pres — course source, outline checking and deck rendering
       Whether a deck is renderable: approved, matching its plan, figures
       present and credited.
 
-  pres render DECK.md [--pdf] [--out DIR]
+  pres render DECK.md [--pdf] [--out DIR] [--draft]
       The .pptx, and with --pdf the LibreOffice conversion of that same deck.
+      --draft writes a second deck beside it, <name>-draft.pptx, in which every
+      planned-but-undrawn visual appears as a card carrying what it must show
+      and the prompt that would make it. Set PRES_IMAGE_COMMAND to a command
+      taking {prompt} and {out} and the draft fills itself instead.
 
   pres find-image --search QUERY [--limit N] [--any-licence]
                   [--pick N --name STEM --into DIR]
@@ -203,6 +208,7 @@ async function commandRender(): Promise<void> {
   const outDir = flag("out");
   const result = await renderDeck(resolve(path), {
     pdf: has("pdf"),
+    draft: has("draft"),
     ...(outDir ? { outDir } : {}),
   });
 
@@ -234,6 +240,10 @@ async function commandRender(): Promise<void> {
         "reading through, wrong for anything presented or handed out.",
       );
     }
+  }
+  if (result.missing) {
+    console.log("");
+    console.log(describeDraft(result.missing));
   }
   console.log("\nThen look at it. The first render usually has a real defect or two, and they are\nobvious in the pages and invisible in the source.");
 }

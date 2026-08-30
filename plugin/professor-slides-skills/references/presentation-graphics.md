@@ -183,6 +183,11 @@ A planned visual with no figure beside it is not left blank and shrugged at.
 Write the prompt onto the figure record and report that the slide is waiting on
 an image; `pres check` warns about it by name.
 
+Then render the draft — `pres render DECK.md --draft` writes a second deck in
+which each of those holes is a card carrying the requirement and the prompt, so
+the list of pictures still to make is a thing you can page through rather than a
+field in a YAML file. See the render skill for `PRES_IMAGE_COMMAND`.
+
 ### What neither mechanism may be used for
 
 - **Anything that asserts.** A found chart of someone else's results, or a

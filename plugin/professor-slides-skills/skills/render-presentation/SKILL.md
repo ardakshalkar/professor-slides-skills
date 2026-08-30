@@ -56,6 +56,43 @@ list that lost its numbering, a table that wrapped badly. They are obvious in
 the pages and invisible in the source. Open the PDF and read it before handing
 it over.
 
+## The draft deck, for the pictures that do not exist yet
+
+A slide that was planned with a figure and does not have one is invisible: the
+deck renders, the prose fills the space, and the hole is a line in a YAML file
+nobody opens. `--draft` makes it visible.
+
+    pres render DECK.md --pdf --draft
+
+That writes the ordinary deck **and** `<name>-draft.pptx` beside it, in which
+every planned-but-undrawn visual is a dashed card carrying what the outline said
+the picture must show and the prompt that would produce it. Every slide in the
+draft is marked `DRAFT`, and it is written under its own name, so it can never
+be handed out by mistake or overwrite the deck you present.
+
+Two decks, one command: **the one you present, and the one that shows what is
+still missing from it.** Read them side by side and the gap is the work list.
+
+**It does not call an image model, and that is on purpose rather than a gap.**
+Writing the prompt is language work and is yours; running it belongs to whatever
+generator the professor already uses. What this adds is the hand-off — the
+prompt on the slide, where the hole is.
+
+If a professor does want the draft filled in, they point `PRES_IMAGE_COMMAND` at
+a command taking `{prompt}` and `{out}`:
+
+    PRES_IMAGE_COMMAND='mytool --prompt {prompt} --out {out}'
+
+Quote any part with spaces in it; the template is split the way a shell splits
+it. A command that fails, or that does not write the file it was asked for,
+leaves the placeholder standing and says so — a draft that quietly shipped an
+empty slot would be worse than one showing the hole.
+
+Anything so generated is captioned **"Generated illustration. Not a photograph
+or a measurement."** on the slide, and is a draft: it belongs in the draft deck
+until the professor looks at it and decides it is true. Never link a generated
+file into the deck markdown on their behalf.
+
 ## When a dependency is missing
 
 Say which, and hand over what is honest about being a substitute.
@@ -110,3 +147,6 @@ markdown is their call, not yours.
   what that costs.
 - **Do not register the render** as a source of anything.
 - **Report drift, do not reconcile it.**
+- **A generated picture stays in the draft deck** until the professor has looked
+  at it. It is captioned as generated wherever it appears, and it is never
+  linked into the markdown on their behalf.
