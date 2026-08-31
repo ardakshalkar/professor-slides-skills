@@ -31,6 +31,8 @@
       "Outline next week's lecture for CSS-4008.",
       "Build the slides from the approved outline.",
       "Render the deck to PowerPoint and PDF."
-    ]
+    ],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png"
   }
 }
