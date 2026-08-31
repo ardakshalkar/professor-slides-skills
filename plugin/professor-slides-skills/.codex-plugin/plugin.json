@@ -1,7 +1,7 @@
 {
   "name": "professor-slides-skills",
   "description": "Outline, build and render course presentations from a Supabase course database, a YAML course directory, or a single flat course file.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Ardak Shalkarbayuly"
   },
@@ -29,7 +29,6 @@
     ],
     "defaultPrompt": [
       "Outline next week's lecture for CSS-4008.",
-      "Plan a 90-minute workshop on retrieval-augmented generation.",
       "Build the slides from the approved outline.",
       "Render the deck to PowerPoint and PDF."
     ]
