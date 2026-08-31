@@ -11,34 +11,19 @@ render contract. A professor who only wants to build a deck cannot use it.
 This installs on its own — three skills, a `pres` CLI, no other repository
 required.
 
-## Install from claude.ai — all buttons
-
-The shortest route has no file editing and no terminal in it. In the Claude web
-app or the desktop app, open **Settings → Customize → Plugins**, then:
-
-1. **Add** (top right) → **Add marketplace**.
-2. Paste `ardakshalkar/professor-slides-skills` into **URL** — the field takes
-   a GitHub `owner/repo` or a full git repository URL.
-3. **Sync**.
-4. The plugin appears under **Plugins**. Turn it on there.
-
-This is the account-level route: what you enable here syncs through your
-claude.ai account and is what **Cowork** and cloud sessions read. It is *not*
-the same store as the `~/.claude` directory that a local **Code** session or a
-terminal `claude` reads — so for the plugin to appear in local coding sessions,
-use one of the two routes below as well.
-
 ## Install in the Claude desktop app
 
-Local **Code** sessions have their own plugin store, separate from the
-account-level one above. It installs with buttons too — the **+** next to the
-prompt box, then **Plugins** — with one catch worth stating plainly: *that*
-browser only lists marketplaces already registered, and unlike the claude.ai
-panel it has no button to add one. This repository is not registered until you
-say so, and the slash commands most instructions give you (`/plugin`) are
-**terminal-only** — they do nothing in the desktop app.
+**This is the tested route.** It is what the plugin was installed with while
+this README was written, and it works today.
 
-So the honest desktop route is one small file, then buttons.
+Local **Code** sessions keep their own plugin store, and the desktop app
+installs into it with buttons — the **+** next to the prompt box, then
+**Plugins**. One catch, worth stating plainly: that browser only lists
+marketplaces already registered, and it has no button to add one. Nor can you
+type your way around it — `/plugin`, which most instructions hand you, is
+**terminal-only** and does nothing in the desktop app.
+
+So: register the marketplace once, then use the buttons.
 
 **Step 1 — register the marketplace.** Ask Claude, in the Code tab, to do it
 for you:
@@ -77,9 +62,9 @@ marketplace resolves, and you can skip step 2 entirely.
 **Plugins** → **Add plugin**. **professor-slides-skills** is now in the
 browser. Open it, check the **Will install** list — three skills and one
 `SessionStart` hook, no MCP server and no agents — and install. **Manage
-plugins** in the same menu enables, disables and uninstalls it later.
-**Customize** in the sidebar collects connectors, skills and plugins in one
-place.
+plugins** in the same menu enables, disables and uninstalls it later. Ignore
+**Customize** in the sidebar for this: it is the account-level store, and it
+cannot take this plugin yet.
 
 **Step 3 — let it install its dependencies.** Installing a plugin does not run
 `npm install`, so the first `pres` command would die on a missing module. The
@@ -134,6 +119,39 @@ buys you, is in [the plugin's README](plugin/professor-slides-skills/README.md).
 
 Not distributed as a claude.ai desktop MCPB extension — this is a
 skills-and-CLI plugin, with no MCP server in it.
+
+## Install from claude.ai — does not work yet
+
+There is an all-buttons route, and it is the one you would reach for first:
+**Settings → Customize → Plugins → Add → Add marketplace**, a field taking a
+GitHub `owner/repo` or a git URL, a **Sync automatically** switch, **Sync**.
+
+It refuses this repository. Both spellings of the address —
+`ardakshalkar/professor-slides-skills` and the full `.git` URL — come back with:
+
+```text
+Marketplace sync failed. Check the repository URL and try again.
+```
+
+Nothing is wrong with the URL, or with this repository. That panel's backend
+does not support third-party marketplaces at all: it rejects every documented
+plugin source type from a non-Anthropic marketplace, and a relative path like
+this one's `./plugin/professor-slides-skills` fails server-side with *no files
+found at source path*. See
+[anthropics/claude-code#41653](https://github.com/anthropics/claude-code/issues/41653),
+closed as not planned, and
+[#61271](https://github.com/anthropics/claude-code/issues/61271) for the same
+generic message wrapping a different backend failure. There is no repository
+change that fixes it, which is why nothing here tries.
+
+The routes above work because they read the marketplace locally rather than
+through that backend.
+
+Worth knowing regardless: this is the **account-level** store. What you enable
+here syncs through your claude.ai account and feeds **Cowork** and cloud
+sessions. It is *not* the `~/.claude` directory a local **Code** session or a
+terminal `claude` reads, and neither store fills the other. So the only thing
+this costs you today is Cowork and cloud sessions; local sessions are covered.
 
 ## Install in Codex and ChatGPT — not yet
 
