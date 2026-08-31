@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="plugin/professor-slides-skills/assets/icon.png"
+       alt="A professor in a robotic exoskeleton assembling slide decks"
+       width="200">
+</p>
+
 # Professor Slides Skills
 
 A Claude Code plugin that plans a presentation, writes it, and renders it —
