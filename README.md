@@ -153,46 +153,62 @@ sessions. It is *not* the `~/.claude` directory a local **Code** session or a
 terminal `claude` reads, and neither store fills the other. So the only thing
 this costs you today is Cowork and cloud sessions; local sessions are covered.
 
-## Install in Codex and ChatGPT — not yet
+## Install in Codex
 
-[ChatGPT and Codex share one plugin
-directory](https://developers.openai.com/plugins/concepts/plugins), so there is
-no separate "ChatGPT plugin" to build: the same
-[`.codex-plugin/plugin.json`](plugin/professor-slides-skills/.codex-plugin/plugin.json)
-that Codex reads is what puts a plugin in front of ChatGPT users too. This
-repository carries that manifest alongside the Claude one.
+Codex has its own marketplace file, and this repository carries one at
+[`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) beside
+the Claude one.
 
-The flow it is meant to reach is the same shape as Claude's. In Codex CLI,
-`/plugins` opens a browser with marketplace tabs across the top — search it,
-press **Enter** for details, choose **Install plugin**, and **Space** toggles
-an installed plugin on and off. Plugins run in ChatGPT web, desktop and mobile,
-in Codex inside the ChatGPT desktop app, and in Codex CLI; the **IDE extension
-does not support them**.
+In the Codex app, open **Plugins** and choose **Add plugin marketplace**. Put
+the repository into **Source**:
 
-The pieces that make it *reachable* are in place. There is a Codex marketplace
-at [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json), so
-in principle:
+```text
+https://github.com/ardakshalkar/professor-slides-skills
+```
+
+Leave **Git ref** and **Sparse paths** empty. The greyed-out `main` and
+`plugins/codex` are examples rather than defaults: Codex resolves this
+repository's default branch on its own, and the marketplace entry already names
+where the plugin sits. Then **Add marketplace**.
+
+From Codex CLI, `/plugins` opens the same browser — marketplace tabs across the
+top, **Enter** for details, **Install plugin**, **Space** to toggle an
+installed plugin. Or skip the browser:
 
 ```bash
 codex plugin marketplace add ardakshalkar/professor-slides-skills
 ```
 
-**But it has never been run under Codex, and one known problem remains.** The
-hook and both skill files locate `references/`, `beats/` and the worked example
-through `${CLAUDE_PLUGIN_ROOT}`, a variable only Claude Code sets. Under Codex
-those paths collapse to the filesystem root, so the skills lose their reference
-material and [the preflight
+### How far this is known to work
+
+Codex clones the repository, finds the marketplace file and parses it — its
+own error messages proved each of those, one rejected field at a time. What has
+**not** been seen is a finished install, or a skill running.
+
+One known problem stands in the way. The hook and both skill files locate
+`references/`, `beats/` and the worked example through `${CLAUDE_PLUGIN_ROOT}`,
+which only Claude Code sets. Under Codex those paths collapse to the filesystem
+root, so the skills lose their reference material and [the preflight
 hook](plugin/professor-slides-skills/hooks/hooks.json) fails into a misleading
-message about Node. Fixing that means a variable both loaders set, or a
-lookup that does not need one — and it is not done.
+message about Node. That wants a lookup needing no such variable, and it is not
+written yet.
 
-There is a second, more structural limit: these three skills are a thin layer
-over the `pres` command, so they need a shell. Codex CLI has one. ChatGPT web
-and mobile do not, and nothing here will work there whatever the manifest says.
+A second limit is structural rather than a bug: these three skills are a thin
+layer over the `pres` command, so they need a shell. Codex CLI has one.
 
-So: **Claude Code is the tested path.** Codex is plumbed but unproven — try it
-if you like, and check the skills actually find their references before
-trusting a deck to it.
+So **Claude Code is the tested path**, and Codex is plumbed but unproven. If you
+try it, check that a skill can actually read its references before trusting a
+deck to it.
+
+## ChatGPT
+
+[ChatGPT and Codex share one plugin
+directory](https://developers.openai.com/plugins/concepts/plugins), so there is
+no separate "ChatGPT plugin" to build — but nothing here reaches ChatGPT today.
+`chatgpt.com/plugins` lists curated connectors with no field for a repository,
+and `chatgpt.com/skills` offers only *create in chat*, *create in editor* and
+*upload from computer*: no marketplace, no sync. Even uploading a `SKILL.md` by
+hand would not help, because ChatGPT on the web has no shell to run `pres` in.
 
 ## What's inside
 
