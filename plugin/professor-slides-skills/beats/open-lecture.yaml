@@ -22,7 +22,11 @@ sequence:
     intent: orient
     archetype: roadmap
     density: sparse
-    note: three or four sections, not a table of contents
+    required_visual: the session or course as its stops, this one marked
+    note: >-
+      three or four sections, not a table of contents — and drawn. "Where are
+      we" is a question about position, and position written as bullets makes
+      the room rebuild the map from a description of it.
 visual_rules:
   image_dominance: high
   avoid_dense_text_initially: true

@@ -200,3 +200,73 @@ test("a seminar on a primary source is not asked to draw one", () => {
     slide({ number: index + 1, archetype: index % 2 ? "primary_source" : "question", text_roles: ["question"] }));
   assert.doesNotMatch(messages(critiqueDeck(deck(seminar))), /could carry a picture plan one/);
 });
+
+test("a roadmap with nothing drawn is reported — the map is the slide", () => {
+  // "Last time / today / builds on" as three bullets is the commonest un-drawn
+  // slide in a teaching deck, and until `roadmap` became a dominant-visual
+  // archetype nothing said so.
+  const problems = checkSlideGrammar(slide({ number: 2, archetype: "roadmap" }));
+  assert.match(messages(problems), /'roadmap' slide is carried by its picture/);
+  assert.doesNotMatch(
+    messages(checkSlideGrammar(slide({ number: 2, archetype: "roadmap", required_visual: "the course arc" }))),
+    /carried by its picture/,
+  );
+});
+
+test("an un-drawn roadmap still counts against the prose share", () => {
+  // A dominant-visual archetype is normally read as an object in its own right.
+  // A roadmap is the exception: it is what a deck looks like when the map was
+  // never drawn, so counting it as carried would hide it from the one measure
+  // that looks for un-drawn slides.
+  const prose = Array.from({ length: 10 }, (_, index) =>
+    slide({ number: index + 1, archetype: index % 2 ? "roadmap" : "worked_example" }));
+  assert.match(messages(critiqueDeck(deck(prose))), /carried by prose/);
+});
+
+test("an opening that orients the room without drawing anything is reported", () => {
+  const problems = critiqueDeck(deck([
+    slide({ number: 1, intent: "orient", archetype: "section_opener" }),
+    slide({ number: 2, intent: "orient", archetype: "roadmap" }),
+    slide({ number: 3, intent: "introduce_concept", archetype: "definition" }),
+  ]));
+  assert.match(messages(problems), /slides 1–2 orient the room and none of them draws anything/);
+});
+
+test("an opening that draws its map says nothing", () => {
+  const problems = critiqueDeck(deck([
+    slide({ number: 1, intent: "orient", archetype: "section_opener" }),
+    slide({ number: 2, intent: "orient", archetype: "roadmap", required_visual: "the course arc" }),
+    slide({ number: 3, intent: "introduce_concept", archetype: "definition" }),
+  ]));
+  assert.doesNotMatch(messages(problems), /orient the room/);
+});
+
+test("a session that opens straight into the problem has no orientation run to check", () => {
+  // A seminar opens on the claim, not on a map. One orienting slide is not a run.
+  const problems = critiqueDeck(deck([
+    slide({ number: 1, intent: "create_need", archetype: "section_opener" }),
+    slide({ number: 2, intent: "provide_evidence", archetype: "primary_source" }),
+  ]));
+  assert.doesNotMatch(messages(problems), /orient the room/);
+});
+
+test("a deck whose first picture arrives late is reported", () => {
+  const late = Array.from({ length: 10 }, (_, index) =>
+    slide({
+      number: index + 1,
+      archetype: "worked_example",
+      ...(index >= 5 ? { required_visual: "the split" } : {}),
+    }));
+  assert.match(messages(critiqueDeck(deck(late))), /reads 5 slides before it is given anything to look at/);
+});
+
+test("a deck that draws nothing at all is told once, not twice", () => {
+  // The late-first-picture check is silent when there is no first picture: that
+  // deck already has its own warning, and saying it twice teaches the professor
+  // to skim past both.
+  const none = Array.from({ length: 10 }, (_, index) =>
+    slide({ number: index + 1, archetype: "worked_example" }));
+  const found = messages(critiqueDeck(deck(none)));
+  assert.match(found, /no slide in this deck plans a drawn figure/);
+  assert.doesNotMatch(found, /before it is given anything to look at/);
+});

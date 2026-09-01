@@ -15,6 +15,19 @@ outline: MODULE-06-slides.outline.yaml
 status: approved
 max_slides: 12
 
+# The title slide's picture would go here, and the renderer would bleed it down
+# the right of slide 1 with the text column narrowing to suit:
+#
+#   title_slide:
+#     image: MODULE-06-title.jpg
+#     image_alt: An empty lecture theatre seen from the back row.
+#
+# It is commented out because no image ships in this repository, and a plan
+# naming a file that is not beside the deck renders with a warning. An image
+# there is the one picture in a deck allowed to carry no information — and it
+# should be an image rather than a diagram: a mechanism on the title slide shows
+# the payoff before anything has asked the question. See references/typography.md.
+
 slides:
   - number: 1
     title: Model evaluation and overfitting
@@ -27,6 +40,7 @@ slides:
     archetype: roadmap
     minutes: 6
     purpose: place the session — last week's split, this week's question
+    required_visual: the course arc, module 6 current and module 5 done
 
   - number: 3
     title: The number that meant nothing
@@ -76,8 +90,27 @@ slides:
     archetype: synthesis
     minutes: 4
     purpose: hand over to regularisation, and name the lab task
+    required_visual: the same arc, module 6 done and module 7 next
 
 figures:
+
+  # The opening and closing arc: two files with identical geometry and the marker
+  # moved, which is what `visual_anchor: course-arc` means on slides 2 and 9. One
+  # picture the room comes to recognise beats two summaries of it.
+  MODULE-06-slides-fig-03-arc-now.svg:
+    title: The course arc, with module 6 current
+    alt: >-
+      Three modules left to right. Module 5, splitting data, is marked done.
+      Module 6, evaluation and overfitting, is marked as where the course is
+      now. Module 7, closing the gap, is marked next. The arrow out of module 5
+      carries the score they reported.
+  MODULE-06-slides-fig-04-arc-next.svg:
+    title: The course arc, with module 6 done and module 7 next
+    alt: >-
+      The same three modules as the opening slide, with the marker moved:
+      modules 5 and 6 are both marked done, and module 7, closing the gap, is
+      now marked as where the course goes next.
+
   MODULE-06-slides-fig-02-curves.svg:
     title: Two training runs, compared by the gap between their curves
     alt: >-

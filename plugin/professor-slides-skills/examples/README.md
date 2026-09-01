@@ -1,7 +1,7 @@
 # A worked example
 
 One complete set for `MODULE-06` of the example course `CSS-4008` that ships
-with ProfessorHarness — the outline, the deck, one figure, and the render
+with ProfessorHarness — the outline, the deck, its figures, and the render
 contract that ties them together.
 
 Read it before writing your first outline or deck. It is easier to see what

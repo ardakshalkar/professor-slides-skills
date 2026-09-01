@@ -23,6 +23,10 @@ sequence:
     intent: orient
     archetype: roadmap
     density: sparse
+    required_visual: the course arc, this module marked current
+    note: >-
+      the same arc every week with the marker moved, not a new picture — which
+      is the same reason the first step reuses last week's diagram.
 visual_rules:
   reuse_visual_anchor: true
   note: >-

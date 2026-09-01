@@ -32,7 +32,7 @@ variation should come from the teaching:
 | # | Archetype | Dominant element | Typical text | Composition |
 | --- | --- | --- | --- | --- |
 | 1 | `section_opener` | title or image | 3–12 words | full image or large title |
-| 2 | `roadmap` | structure | short labels | a sequence or map |
+| 2 | `roadmap` | the map itself | short labels on it | a sequence or map, drawn |
 | 3 | `big_idea` | a statement | one claim | large text |
 | 4 | `definition` | a term | definition + one example | term → meaning → example |
 | 5 | `question` | a question | almost none | large question + whitespace |
@@ -203,6 +203,61 @@ stages is a diagram somebody declined to draw.
 **And never draw** what you cannot ground: a chart of this class's results that
 no command produced, a chart of external data with no citable source, a diagram
 of a system the course has not described. Those stay words, and say so.
+
+## The opening is where prose costs most
+
+The part of a deck a generator most reliably leaves as words is its first three
+slides, and it is the worst place to leave them. Measured across four real
+lecture decks from one course: not one had a figure on slide 1, and one of them
+opened with five prose slides in a row.
+
+The reason is not laziness, it is that the opening's content looks verbal and
+is not. **Every question an opening answers is positional** — where are we, what
+do you already have, where does this go, what is out of scope. Position in a
+structure is the one thing prose is worst at and a picture is best at. So
+
+```text
+- Last time: you split a dataset and trained a model on part of it
+- Today: what that number is, and is not, evidence for
+- Builds on CONCEPT-TRAIN-TEST-SPLIT, taught in MODULE-05
+```
+
+asks the room to rebuild the course's shape from a description of it, in week
+after week after week. That is why `roadmap` is a **dominant-visual** archetype:
+its dominant element is structure, structure is a picture, and the words on it
+are labels rather than a substitute.
+
+**Orientation cannot be premature**, and this is worth saying because the rule
+against it gets over-applied here. A mechanism drawn before the problem it
+solves is a mechanism nobody has a reason to follow — but orientation *is* the
+need-creation, so the rule does not reach it. Drawing the map first is not the
+error that rule guards against.
+
+Two things follow that no other rule in this file covers.
+
+**The opening figure should be the same figure every week.** One course arc,
+drawn once, re-linked with the marker moved — that is what `visual_anchor` and
+`focus` are for, and it is better teaching than a fresh drawing, because
+recognition is cheaper for the learner than reading. It is also the difference
+between a living slide 2 that costs one drawing and one that costs a drawing
+every week, which is the difference between a rule that holds and a rule that
+lapses in week 4.
+
+**The title slide takes an image, not a diagram.** Its picture is named in the
+plan as `title_slide.image` — see `typography.md` — and it is the one picture in
+a deck allowed to carry no information, because a title slide is an identity
+card. A mechanism there shows the payoff before anything has asked the question.
+
+`pres outline check` reports an opening run of orienting slides that draws
+nothing, and a deck whose first picture arrives after slide 4. Both are
+warnings, and both exist because every other measure in this file is
+position-blind: a prose slide at 2 and a prose slide at 22 count the same, and
+they do not cost the same.
+
+Administrivia is the other half of this. Logistics, office hours and credit
+arrangements are legitimately text and legitimately in the deck — at the end, or
+in the handout. One of the four decks measured above spends fifty-four words of
+its first two minutes on them.
 
 ## Text-only slides are legitimate
 

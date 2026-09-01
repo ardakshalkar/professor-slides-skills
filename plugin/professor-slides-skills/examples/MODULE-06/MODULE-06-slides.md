@@ -16,9 +16,13 @@ MODULE-06 · CSS-4008 2026-FALL · 5 October
 
 ## Where we are
 
-- Last time: you split a dataset and trained a model on part of it
-- Today: what the number that came out of that is, and is not, evidence for
-- Builds on CONCEPT-TRAIN-TEST-SPLIT, taught in MODULE-05
+![Three modules left to right. Module 5, splitting data, is marked done. Module
+6, evaluation and overfitting, is marked as where the course is now. Module 7,
+closing the gap, is marked next. The arrow out of module 5 carries the score they
+reported.](MODULE-06-slides-fig-03-arc-now.svg)
+
+You can split a dataset and report a number. Today is what that number is, and
+is not, evidence for — building on CONCEPT-TRAIN-TEST-SPLIT from MODULE-05.
 
 ---
 
@@ -93,5 +97,8 @@ matters.
 
 ## Next
 
-- MODULE-07 takes the gap you just learned to read and asks what closes it
-- Before then: the starter notebook (RES-442), through the first checkpoint
+![The same three modules as the opening slide, with the marker moved: modules 5
+and 6 are both marked done, and module 7, closing the gap, is now marked as
+where the course goes next.](MODULE-06-slides-fig-04-arc-next.svg)
+
+Before MODULE-07: the starter notebook (RES-442), through the first checkpoint.

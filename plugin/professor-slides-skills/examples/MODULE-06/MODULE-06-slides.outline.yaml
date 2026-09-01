@@ -91,6 +91,14 @@ slides:
     text_roles: [headline]
     density: sparse
 
+  # Drawn, because everything this slide answers is positional — where are we,
+  # what do you already have, where does this go. Three bullets here would make
+  # the room rebuild the map from a description of it. Orientation cannot be
+  # premature: it is the need-creation, so the usual rule against a diagram
+  # arriving before the question does not apply.
+  #
+  # The anchor is the same arc slide 9 closes on, with the marker moved. One
+  # picture the room comes to recognise beats two summaries of it.
   - number: 2
     intent: orient
     archetype: roadmap
@@ -99,6 +107,9 @@ slides:
     purpose: place the session — last week's split, this week's question
     text_roles: [headline, label]
     density: sparse
+    visual_anchor: course-arc
+    focus: MODULE-06
+    required_visual: the course arc, module 6 current and module 5 done
     concepts: [CONCEPT-MODEL-EVALUATION]
 
   # One claim, large and alone. Three paragraphs of prose here would be a
@@ -176,6 +187,8 @@ slides:
     density: sparse
     concepts: [CONCEPT-MODEL-EVALUATION, CONCEPT-OVERFITTING]
 
+  # Slide 2's arc, one module on. Identical geometry, so the two read as one
+  # picture moving rather than as two diagrams.
   - number: 9
     intent: integrate
     archetype: synthesis
@@ -184,6 +197,9 @@ slides:
     purpose: hand over to regularisation, and name the lab task
     text_roles: [takeaway]
     density: sparse
+    visual_anchor: course-arc
+    focus: MODULE-07
+    required_visual: the same arc, module 6 done and module 7 next
 
 coverage:
   outcomes_served: [LO-02, LO-04]
