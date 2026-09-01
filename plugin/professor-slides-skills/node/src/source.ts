@@ -28,14 +28,20 @@ import {
 } from "./model.ts";
 import {
   connect,
+  failureTtl,
   fetchBundle,
+  forgetRoute,
   listCourses,
   readCachedDsn,
+  recordUnreachable,
   redact,
+  unreachableRecently,
   writeCachedDsn,
   DatabaseUnreachable,
 } from "./supabase.ts";
 import { coursesIn, readCourseDirectory } from "./yaml-source.ts";
+import { formatMs, noteTiming, timed } from "./timing.ts";
+import type { SourcePreference } from "./route.ts";
 
 export interface ResolveOptions {
   /** The course identifier, e.g. `CSS-4008`. */
@@ -46,6 +52,22 @@ export interface ResolveOptions {
   courseFile?: string;
   /** Force one source instead of trying all three, for diagnosis. */
   only?: Origin;
+  /**
+   * Which sources are in play, as a preference rather than a diagnosis.
+   *
+   *   `auto`      the database, then a course directory, then a flat file.
+   *   `database`  the database and nothing else. A failure is an error, never
+   *               a quiet fallback onto whatever a directory last held.
+   *   `local`     skip the database. What FAST mode uses, and what a professor
+   *               working on a train wants.
+   *
+   * Separate from `only` because they answer different questions. `only` is for
+   * diagnosing a fallback and forces exactly one origin; this expresses what
+   * the professor wants to happen, and `local` still tries two places.
+   */
+  source?: SourcePreference;
+  /** Probe the database even if it was recently found unreachable. */
+  freshRoute?: boolean;
   /** Where the search starts. */
   cwd?: string;
 }
@@ -110,11 +132,42 @@ async function tryDatabase(
     return null;
   }
 
+  // A database that did not answer a minute ago will not answer now, and the
+  // difference between saying so immediately and finding out again is the
+  // difference between a command that takes 40 ms and one that takes six
+  // seconds — paid once per `pres` call, several times per deck. The record
+  // expires, and `--source database` and `--fresh-route` both retry regardless:
+  // a cache that could not be overridden would hide a database coming back.
+  // `--source database` always probes. It is the flag a professor reaches for
+  // when they have just reconnected and want the shared copy, and the message
+  // the cache prints tells them to reach for it — a cache that then refused to
+  // retry would be a cache that lies.
+  const retryAnyway = options.freshRoute || options.source === "database";
+  if (!retryAnyway) {
+    const failed = unreachableRecently(configured.dsn);
+    if (failed) {
+      noteSkip(`unreachable ${formatMs(failed.ageMs)} ago`);
+      attempted.push({
+        origin: "supabase",
+        why:
+          `skipped: nothing answered ${formatMs(failed.ageMs)} ago, and that is remembered for ` +
+          `${formatMs(failureTtl())} so every command after the first is instant instead of slow ` +
+          `(${failed.why}). Retry now with --source database, or --fresh-route.`,
+      });
+      return null;
+    }
+  } else {
+    forgetRoute(configured.dsn);
+  }
+
   const cached = readCachedDsn(configured.dsn);
   const dsn = cached ?? configured.dsn;
 
   try {
-    const { client, route } = await connect(dsn, { probe: cached === null });
+    const { client, route } = await timed(
+      cached ? "database connect (cached route)" : "database probe",
+      () => connect(dsn, { probe: cached === null }),
+    );
     try {
       const payload = await fetchBundle(client, options.course);
       if (!payload) {
@@ -158,6 +211,12 @@ async function tryDatabase(
     const reason = error instanceof DatabaseUnreachable
       ? [error.message, ...error.attempts.map((line) => `  ${line}`)].join("\n")
       : String((error as Error).message ?? error);
+    // Remembered, so the next command in this session is instant. Only a real
+    // failure to reach it: `pg` not being installed is a missing dependency, not
+    // an unreachable database, and caching it would hide the install.
+    if (!/`pg` driver is not installed/.test(reason)) {
+      recordUnreachable(configured.dsn, reason);
+    }
     attempted.push({
       origin: "supabase",
       why: `${redact(dsn)} did not answer.\n${reason}`,
@@ -165,6 +224,9 @@ async function tryDatabase(
     return null;
   }
 }
+
+/** A timing line for a database that was not tried, which is the point of it. */
+const noteSkip = (detail: string): void => noteTiming("database probe", 0, `skipped — ${detail}`);
 
 function tryDirectory(
   environment: Environment,
@@ -235,11 +297,37 @@ function tryFlatFile(
  * hour spent wondering why the deck has no readings in it.
  */
 export async function resolveCourse(options: ResolveOptions = {}): Promise<Resolved> {
+  return timed("course source", () => resolveCourseInner(options));
+}
+
+/** Which origins this preference allows, in order. */
+export function originsFor(preference: SourcePreference = "auto"): Origin[] {
+  if (preference === "database") return ["supabase"];
+  if (preference === "local") return ["course-directory", "flat-file"];
+  return ["supabase", "course-directory", "flat-file"];
+}
+
+async function resolveCourseInner(options: ResolveOptions): Promise<Resolved> {
   const cwd = resolve(options.cwd ?? process.cwd());
   const environment = loadEnvironment(cwd);
   const attempted: AttemptRecord[] = [];
 
+  const preference: SourcePreference = options.source ?? "auto";
+  const allowed = new Set(originsFor(preference));
   const wanted = options.only;
+
+  // A skipped database is recorded, never merely absent. The whole point of the
+  // provenance record is that a deck built from a course directory while the
+  // professor believed they were on the shared database is indistinguishable
+  // from a correct one, and "I asked for local" is exactly as easy to forget as
+  // "the network was down".
+  if (!allowed.has("supabase") && (!wanted || wanted === "supabase")) {
+    attempted.push({
+      origin: "supabase",
+      why: "not tried — --source local (or fast mode) asked for the copy on this machine",
+    });
+  }
+
   const stages: Array<[Origin, () => Promise<Resolved | null> | Resolved | null]> = [
     ["supabase", () => tryDatabase(environment, options, attempted)],
     ["course-directory", () => tryDirectory(environment, options, attempted)],
@@ -248,16 +336,22 @@ export async function resolveCourse(options: ResolveOptions = {}): Promise<Resol
 
   for (const [origin, run] of stages) {
     if (wanted && wanted !== origin) continue;
+    if (!allowed.has(origin)) continue;
     const resolved = await run();
     if (resolved) return resolved;
   }
 
   const reasons = attempted.map((entry) => `  ${entry.origin}: ${entry.why}`).join("\n");
+  const tail = preference === "database"
+    ? "\n\n--source database was asked for, so nothing fell back to a local copy. A course " +
+      "directory last pulled in March produces a deck built from March's outcomes and looks " +
+      "exactly like a correct one; that is the failure this refusal prevents. Use --source auto " +
+      "to allow the fallback, with the provenance line saying what happened."
+    : "\n\nThree places are looked in, in this order: a course database named by " +
+      "PRES_COURSE_URL/SUPABASE_DB_URL/SUPABASE_URL, a workspace holding courses/<ID>/course.yaml, " +
+      "and a single flat course.yaml. See references/course-source.md.";
   throw new Error(
-    `No course found${options.course ? ` for '${options.course}'` : ""}.\n${reasons}\n\n` +
-    "Three places are looked in, in this order: a course database named by " +
-    "PRES_COURSE_URL/SUPABASE_DB_URL/SUPABASE_URL, a workspace holding courses/<ID>/course.yaml, " +
-    "and a single flat course.yaml. See references/course-source.md.",
+    `No course found${options.course ? ` for '${options.course}'` : ""}.\n${reasons}${tail}`,
   );
 }
 
@@ -266,7 +360,16 @@ export function describeProvenance(source: CourseSource): string {
   const { provenance: record } = source;
   const lines = [`Course read from ${record.origin}: ${record.detail}`];
   for (const attempt of record.attempted) {
-    lines.push(`  tried ${attempt.origin} first — ${attempt.why.split("\n")[0]}`);
+    const first = attempt.why.split("\n")[0]!;
+    // "tried X first" is wrong for a source that was deliberately not tried,
+    // and the distinction is the whole value of the line: a database that was
+    // skipped by request is a choice, one that did not answer is a problem.
+    const skipped = /^(?:skipped|not tried)/.test(first);
+    // Strip the reason's own lead-in when the verb already says it: "skipped
+    // supabase first — skipped: nothing answered" reads like a stutter, and this
+    // line is the one thing in the report a professor is meant to actually read.
+    const why = skipped ? first.replace(/^(?:skipped|not tried)\s*[:—-]\s*/, "") : first;
+    lines.push(`  ${skipped ? "skipped" : "tried"} ${attempt.origin} first — ${why}`);
   }
   return lines.join("\n");
 }

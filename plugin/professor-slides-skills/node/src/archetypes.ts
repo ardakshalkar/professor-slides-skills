@@ -98,8 +98,13 @@ export const ARCHETYPES: Record<string, Archetype> = {
     dominant: "structure",
     roles: ["headline", "label"],
     density: "sparse",
-    visual: "supporting",
-    composition: "a sequence or map of where the session goes",
+    // A roadmap answers "where are we", which is a question about position in a
+    // structure — the one thing prose is worst at. "Last time / today / builds
+    // on" as three sentences asks the room to rebuild the map from a
+    // description of it, every week. So the map is the slide, and its words are
+    // labels on the map: `dominant`, not `supporting`.
+    visual: "dominant",
+    composition: "the sequence or map itself, with the words as labels on it",
   },
   big_idea: {
     dominant: "a statement",
@@ -322,6 +327,19 @@ export const TEXT_CARRIED = new Set<string>([
 export const RESET_ARCHETYPES = new Set<string>(["roadmap", "synthesis", "section_opener"]);
 
 /**
+ * `roadmap` is dominant-visual and is deliberately *not* in `OBJECT_CARRIED`.
+ *
+ * The other dominant archetypes announce themselves: nobody plans a
+ * `visual_comparison` or a `data_evidence` slide and then wonders what the
+ * picture is. A roadmap is the shape a deck falls into when the map was never
+ * drawn — three bullets under "Where we are" — so counting it as carried would
+ * hide the commonest un-drawn slide in a deck from the one measure that looks
+ * for un-drawn slides. It counts as carried when it plans a picture, like any
+ * other slide.
+ */
+const CARRIED_ONLY_WHEN_DRAWN = new Set<string>(["roadmap"]);
+
+/**
  * Archetypes whose slide is carried by an object rather than by prose.
  *
  * A picture is the commonest such object, but not the only one: a code block, a
@@ -334,7 +352,8 @@ export const RESET_ARCHETYPES = new Set<string>(["roadmap", "synthesis", "sectio
  */
 export const OBJECT_CARRIED = new Set<string>([
   ...Object.entries(ARCHETYPES)
-    .filter(([, archetype]) => archetype.visual === "dominant")
+    .filter(([name, archetype]) =>
+      archetype.visual === "dominant" && !CARRIED_ONLY_WHEN_DRAWN.has(name))
     .map(([name]) => name),
   "algorithm",
   "derivation",

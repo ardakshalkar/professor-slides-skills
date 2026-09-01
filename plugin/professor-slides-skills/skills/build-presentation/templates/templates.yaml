@@ -31,4 +31,8 @@ templates:
 
 parts:
   - file: plan.yaml
-    purpose: the render contract — the approved sequence, and every figure's credit
+    purpose: >-
+      documentation of the render contract, which is generated. `pres plan build`
+      writes <deck>.plan.yaml from the outline and the markdown; nothing fills
+      this in by hand. Read it to know what ends up in there and why.
+    generated_by: pres plan build

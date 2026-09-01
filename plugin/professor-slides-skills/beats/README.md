@@ -10,9 +10,19 @@ concept: problem → intuition → definition → example → check" produces th
 slides with a reason for their order, and the visual variation then follows from
 the teaching rather than from a rule against repeating a layout.
 
-Each file here is one beat. `/outline-presentation` reads
-`references/teaching-beats.md` for how to choose between them, and reads a
-handful of these files for the ones it picks. Nothing loads all of them.
+Each file here is one beat. Nothing loads all of them, and nothing needs to:
+
+```bash
+pres beats                             # one line each: id, family, slides, the job
+pres beats --phase build_understanding # the candidates for one phase
+pres beats problem-before-solution     # exactly the one you chose, in full
+```
+
+That is the cheap path and the one STANDARD mode takes. The catalogue is enough
+to select from; the file is read only for the beat actually being used.
+`references/teaching-beats.md` is *how to choose* — the representation ladder, the
+four beats most sessions need, why reset beats matter more than they look — and is
+worth reading once rather than once per deck. DEEP mode reads it.
 
 ## The families
 

@@ -1,6 +1,6 @@
 {
   "name": "professor-slides-skills",
-  "description": "Outline, build and render course presentations from a Supabase course database, a YAML course directory, or a single flat course file.",
+  "description": "Plan, write and render course presentations at the depth the request needs — fast, standard or deep — from a Supabase course database, a YAML course directory, or a single flat course file.",
   "version": "0.2.0",
   "license": "MIT",
   "author": {

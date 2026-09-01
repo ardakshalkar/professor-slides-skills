@@ -40,6 +40,29 @@ const SAME_ARCHETYPE_RUN = 3;
 const TEXT_ONLY_RUN = 3;
 /** How many slides of new material before the learner needs their position back. */
 const SLIDES_BEFORE_RESET = 9;
+/**
+ * How far into a deck "the opening" reaches.
+ *
+ * Nothing else here knows *where* a slide sits, which is the gap these two
+ * checks fill. Every other measure treats a prose slide at 2 and a prose slide
+ * at 22 as the same finding, and they do not cost the same: the opening is
+ * where the room decides what kind of hour this is, and where a deck-wide
+ * average is least able to see four dead slides under twenty good ones.
+ */
+const OPENING_SLIDES = 4;
+/** Below this, "the opening" is not a distinct part of the deck. Matches the prose-share gate. */
+const MIN_SLIDES_FOR_OPENING = 8;
+
+/**
+ * Intents that place the learner rather than teach them.
+ *
+ * The run of these at the front of a deck is its orientation, and every
+ * question it answers is positional: where are we, what do you already have,
+ * where does this go, what is out of scope. Position in a structure is what
+ * prose is worst at, so this is where the gap between what a slide is doing and
+ * what carries it is widest.
+ */
+const ORIENTING_INTENTS = new Set(["orient", "administer", "transition"]);
 
 /** Roles that belong to any slide, whatever it is teaching. See the check below. */
 const STRUCTURAL_ROLES = new Set(["headline", "source"]);
@@ -231,6 +254,47 @@ export function critiqueDeck(outline: Outline): Problem[] {
       "anything asks the question it answers. A mechanism explained before the problem it solves " +
       "is a mechanism nobody has a reason to follow.",
     ));
+  }
+
+  // The opening, which is the part of a deck a generator most reliably leaves as
+  // prose — and the part where prose costs most.
+  //
+  // Orientation cannot be premature, which is the reason this is safe to ask
+  // for. The rule against a diagram arriving before the need for it (above)
+  // gets over-applied to the orient phase, and it does not belong there:
+  // orientation *is* the need-creation, so drawing it early is not the error
+  // that rule guards against.
+  const plansVisual = (slide: OutlineSlide): boolean =>
+    Boolean(slide.required_visual ?? slide.visual_anchor);
+
+  const opening: OutlineSlide[] = [];
+  for (const slide of slides) {
+    if (!slide.intent || !ORIENTING_INTENTS.has(slide.intent)) break;
+    opening.push(slide);
+  }
+  if (opening.length >= 2 && !opening.some(plansVisual)) {
+    problems.push(warning(
+      `slides ${opening[0]!.number}–${opening[opening.length - 1]!.number} orient the room and ` +
+      "none of them draws anything. Every question an opening answers is positional — where are " +
+      "we, what do you already have, where does this go — and position described in sentences " +
+      "asks the room to rebuild the map from a description of it. Draw the map; a title slide's " +
+      "picture is title_slide.image in the plan.",
+    ));
+  }
+
+  // And the same failure seen from the other end: a deck that does draw, but not
+  // for the first several slides. Silent when the deck draws nothing at all —
+  // that already has its own warning below, and saying it twice teaches the
+  // professor to skim.
+  if (slides.length >= MIN_SLIDES_FOR_OPENING) {
+    const first = slides.findIndex(plansVisual);
+    if (first >= OPENING_SLIDES) {
+      problems.push(warning(
+        `the first slide that plans a picture is ${slides[first]!.number}, so the room reads ` +
+        `${first} slides before it is given anything to look at. Whatever is worth drawing on ` +
+        `slide ${slides[first]!.number} is usually worth drawing sooner than that.`,
+      ));
+    }
   }
 
   // Long runs of new material with no point at which the learner's conceptual

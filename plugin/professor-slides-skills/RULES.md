@@ -31,7 +31,7 @@ a formatting check. It is the boundary.
 
 ## Approval is a fact in a file, and only a professor puts it there
 
-There is no approval CLI here. The gate is an outline's `status`, and it moves
+There is no approval CLI here. The record is an outline's `status`, and it moves
 to `approved` only when the professor says so — by editing the file, or by
 telling an agent to in the current request, in which case `approved_by` and
 `approved_at` record who and when.
@@ -40,9 +40,44 @@ Never on an agent's own initiative. Never because the outline reads as finished.
 Never carried over from an earlier conversation. And an outline edited after
 approval is an outline whose approval was for a different session — re-check it.
 
-`/build-presentation` refuses a draft. `pres render` refuses a deck built from
-one. Both refusals exist because a `.pptx` looks identical whether or not
-anybody agreed to what is inside it.
+**Whether that record is a gate depends on the deck**, and the deck's own
+generated plan says which. `deep` mode, and anything built with
+`--approval required`, will not render until the outline is `approved`. `fast`
+and `standard` will, because in those modes the professor asked for slides and
+that request *is* the agreement. A plan naming no mode at all requires approval,
+which is every deck built before modes existed.
+
+The gate used to be universal, and universal was wrong in one direction only. It
+is exactly right for a deck somebody asked to review before it was written. For
+"make five slides explaining RAG" it is obstruction — and a professor made to
+approve an outline they never asked for learns to type `status: approved` without
+reading it, which costs the gate everything it was for. A safety mechanism people
+route around has been removed, slowly.
+
+What is not negotiable is **saying which of those happened**. `pres check` and
+`pres render` print the deck's mode and whether an approval stands behind it, and
+a skill handing over a file repeats it. That refusal, and that sentence, both
+exist because a `.pptx` looks identical whether or not anybody agreed to what is
+inside it.
+
+## The plan is generated, so nothing has two homes
+
+`<deck>.plan.yaml` is written by `pres plan build` and by nothing else. Every
+field in it — slide numbers, titles, minutes, purposes, archetypes, densities,
+text roles, required visuals, the figure list — was already stated in the outline
+or in the deck markdown, and a copy is a second thing to keep true.
+
+The rule underneath: **judgement is the model's, bookkeeping is the code's.** An
+agent choosing an archetype is doing the work this plugin exists for. An agent
+retyping that archetype into a second file is doing work a program does without
+making a mistake at slide fourteen.
+
+So a fact has exactly one home. The session's shape is the outline's. What is on
+a slide is the markdown's. The plan is a projection of both, and the only thing
+it holds that neither source does is a figure's licence metadata — preserved
+across regeneration, because `pres find-image` wrote it and nothing else knows
+it. A hand-edited plan is a plan that will be overwritten, and `pres check`
+reports one that has fallen behind rather than letting a stale contract pass.
 
 ## The source says where it came from
 

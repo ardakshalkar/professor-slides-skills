@@ -94,6 +94,10 @@ beats:
 # questions, and keeping them apart is what makes the variation follow from the
 # teaching rather than from a rule against repeating a layout.
 slides:
+  # The title slide's picture is a plan decision, not an outline one — the
+  # renderer composes this slide rather than flowing it, and reads
+  # `title_slide.image` from `<deck>.plan.yaml`. An image, not a diagram: a
+  # mechanism here shows the payoff before anything has asked the question.
   - number: 1
     intent: orient
     archetype: section_opener
@@ -104,6 +108,17 @@ slides:
 
   # Open by placing the session in the sequence. Both halves are read from the
   # module before this one; neither is a summary of what you hope they know.
+  #
+  # And draw it. Everything an opening answers is positional — where are we,
+  # what do you already have, where does this go — and a roadmap written as
+  # "last time / today / builds on" makes the room rebuild the map from three
+  # sentences, every week. Orientation cannot be premature: it *is* the
+  # need-creation, so the usual rule against a diagram arriving before the
+  # question does not apply here.
+  #
+  # The best version of this picture is the same one every week with the marker
+  # moved, which is what `visual_anchor` is for — and why slide 8 below carries
+  # the same anchor one module further on.
   - number: 2
     intent: orient
     archetype: roadmap
@@ -112,6 +127,11 @@ slides:
     purpose: last time, today, what this builds on
     text_roles: [headline, label]
     density: sparse
+    visual_anchor: course-arc
+    focus: "{{ MODULE-ID }}"
+    required_visual: >-
+      the course as its modules left to right, this one marked current and the
+      one before it marked done
     concepts: ["{{ CONCEPT-ID }}"]
 
   # The correction goes before the new content, and only if the professor named
@@ -178,6 +198,9 @@ slides:
     density: sparse
     concepts: ["{{ CONCEPT-ID }}"]
 
+  # The same arc as slide 2, one module further on. A picture the room now
+  # recognises beats a fresh summary of it, and it closes the session where it
+  # opened.
   - number: 8
     intent: integrate
     archetype: synthesis
@@ -186,6 +209,8 @@ slides:
     purpose: what the next session does with this
     text_roles: [takeaway]
     density: sparse
+    visual_anchor: course-arc
+    focus: "{{ the next MODULE-ID }}"
 
 # An omission is often right. An unrecorded omission is indistinguishable from
 # having forgotten, and `pres outline check` treats it as an error.

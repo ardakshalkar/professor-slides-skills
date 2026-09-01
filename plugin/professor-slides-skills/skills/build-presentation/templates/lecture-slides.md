@@ -18,6 +18,11 @@ generated_by: build-presentation-skill
   Every concept named here belongs to the module. If the session needs one the
   module does not have, that is a claim, and it is the professor's — stop and
   say which, rather than adding it.
+
+  Administrivia — logistics, office hours, credit arrangements — is legitimate
+  and does not belong in the first five minutes. Mark it `intent: administer`
+  and put it at the end, or in the handout. The opening is the only part of the
+  hour where the room is deciding what kind of hour this is.
 -->
 
 # {{ session title }}
@@ -28,12 +33,20 @@ generated_by: build-presentation-skill
 
 ## Where we are
 
-<!-- Both halves are read from the module before this one; neither is a summary
-     of what you hope they know. -->
+<!-- Draw the map. This slide answers "where are we", which is a question about
+     position in a structure, and three bullets make the room rebuild the map
+     from a description of it every week. The words that survive are labels on
+     the picture, not a substitute for it.
 
-- Last time: {{ what the previous module covered }}
-- Today: {{ what this session adds }}
-- Builds on {{ CONCEPT-ID }}, taught in {{ MODULE-ID }}
+     Use the same arc file next week with the marker moved. Both halves are read
+     from the module before this one; neither is a summary of what you hope they
+     know. -->
+
+![{{ the course as its modules left to right, this one marked current, the one
+before it marked done, and the concept it carries forward named on the arrow
+between them }}]({{ deck-name }}-fig-01-arc.svg)
+
+{{ one sentence: what they can already do, and what today adds to it }}
 
 ---
 
@@ -99,6 +112,13 @@ generated_by: build-presentation-skill
 ---
 
 ## Next
+
+<!-- The same arc as "Where we are", one module further on: a picture the room
+     now recognises beats a fresh summary of it. Draw the second file with the
+     same geometry so the two read as one picture moving. -->
+
+![{{ the same arc, with this module marked done and the next one marked
+next }}]({{ deck-name }}-fig-NN-arc-next.svg)
 
 - {{ what the next session does with this }}
 - Before then: {{ the reading or task, or delete this line }}
