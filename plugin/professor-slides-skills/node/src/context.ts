@@ -159,6 +159,101 @@ export function buildModuleContext(source: CourseSource, moduleId: string): Modu
 }
 
 /**
+ * The same context, short.
+ *
+ * What STANDARD mode reads. The full report prints every outcome's description,
+ * every concept's description and every reference's location on its own line,
+ * which is right when a session is being designed carefully and is two or three
+ * times the size of what a competent model needs to write a good deck from.
+ *
+ * Nothing is dropped, only trimmed: every identifier, title, prerequisite,
+ * duration and reference is still here, so the boundaries the context exists to
+ * state — what the session may cover, what it may claim to serve — are all
+ * intact. Descriptions are cut to their first sentence-or-so, which is where a
+ * concept description says what the concept is. `pres context` without
+ * `--brief` remains the full thing, and DEEP mode reads that.
+ */
+export function describeContextBrief(context: ModuleContext): string {
+  const clip = (text: string | undefined, limit = 150): string => {
+    const flat = String(text ?? "").replace(/\s+/g, " ").trim();
+    if (flat.length <= limit) return flat;
+    // Prefer a sentence boundary, because half a sentence reads as an error and
+    // a whole short one reads as a summary.
+    const stop = flat.slice(0, limit).lastIndexOf(". ");
+    return stop > limit * 0.4 ? flat.slice(0, stop + 1) : `${flat.slice(0, limit).trimEnd()}…`;
+  };
+
+  const lines: string[] = [];
+  const runId = context.version?.course_version_id ?? context.course.course_id;
+  const week = context.module.week === undefined ? "" : ` · week ${context.module.week}`;
+  lines.push(`${context.module.module_id} ${context.module.title} — ${runId}${week}`);
+  lines.push(
+    `previous: ${context.previous ? context.previous.module_id : "none (first module)"}` +
+    (context.next ? ` · next: ${context.next.module_id}` : ""),
+  );
+
+  lines.push("");
+  lines.push("outcomes (the deck may claim to serve these and no others):");
+  if (!context.outcomes.length) lines.push("  none stated");
+  for (const outcome of context.outcomes) {
+    const level = outcome.level ? ` [${outcome.level}]` : "";
+    lines.push(`  ${outcome.outcome_id}${level} ${outcome.title}`);
+  }
+
+  lines.push("");
+  lines.push("concepts (the deck may cover these and no others):");
+  if (!context.concepts.length) lines.push("  none stated");
+  for (const concept of context.concepts) {
+    lines.push(`  ${concept.concept_id} ${concept.title}`);
+    const description = clip(concept.description);
+    if (description) lines.push(`    ${description}`);
+  }
+
+  if (context.prerequisites.length) {
+    lines.push("");
+    lines.push("prerequisites, taught elsewhere:");
+    for (const concept of context.prerequisites) {
+      const where = concept.introduced_by ?? "not introduced by any module";
+      lines.push(`  ${concept.concept_id} ${concept.title} (${where})`);
+    }
+  }
+
+  lines.push("");
+  if (!context.activities.length) {
+    lines.push("scheduled: nothing, so the duration is not settled — ask.");
+  } else {
+    lines.push("scheduled:");
+    for (const activity of context.activities) {
+      const parts = [
+        activity.type ?? "session",
+        activity.duration_minutes ? `${activity.duration_minutes} min` : null,
+        activity.scheduled_at ?? null,
+      ].filter(Boolean);
+      lines.push(`  ${activity.activity_id} ${activity.title ?? "untitled"} — ${parts.join(" · ")}`);
+    }
+  }
+
+  lines.push("");
+  if (!context.references.length) {
+    lines.push("references: none recorded. The deck is grounded in the course design only; say so.");
+  } else {
+    lines.push("references:");
+    for (const reference of context.references) {
+      const where = reference.url ?? reference.document_id ?? "";
+      const locator = reference.locator ? ` — ${reference.locator}` : "";
+      lines.push(`  ${reference.resource_id} [${reference.kind}] ${reference.title}${locator}${where ? `  ${where}` : ""}`);
+    }
+  }
+
+  if (context.unresolved.length) {
+    lines.push("");
+    lines.push("unresolved:");
+    for (const problem of context.unresolved) lines.push(`  ${problem}`);
+  }
+  return lines.join("\n");
+}
+
+/**
  * The context as prose, for a skill that is going to read it rather than parse
  * it. `--json` gives the same thing structured.
  */

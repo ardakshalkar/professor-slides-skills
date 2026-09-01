@@ -37,6 +37,16 @@ export interface OutlineSlide extends PlannedSlide {
   intent?: string;
   /** How that information is represented. One of the eighteen. */
   archetype?: string;
+  /**
+   * Where the archetype came from.
+   *
+   * `inferred` means `pres plan build` guessed it from the shape of the
+   * markdown, because a FAST deck has no outline describing its slides. The
+   * density checks skip a guessed archetype: a warning derived from a guess is
+   * a warning about the guess, and a professor who reads one of those learns to
+   * ignore the others.
+   */
+  archetype_source?: "outline" | "inferred";
   /** What each piece of text on the slide is doing. */
   text_roles?: string[];
   density?: string;
@@ -117,6 +127,23 @@ export interface Outline {
   slides: OutlineSlide[];
   /** Tolerated at the top level as well as under `presentation:`. */
   max_slides?: number;
+  /**
+   * What the title slide carries besides its words.
+   *
+   * Here rather than only in the plan because the plan is generated, and a
+   * professor pointing at a photograph or an institutional mark is making a
+   * decision, not doing bookkeeping. `pres plan build` carries it across; a
+   * value already in a hand-written plan is preserved too, so nothing that
+   * worked before stops working.
+   */
+  title_slide?: {
+    image?: string;
+    image_alt?: string;
+    logo?: string;
+    logo_alt?: string;
+  };
+  /** Slide numbers, bottom right. On unless this says otherwise. */
+  slide_numbers?: boolean;
   coverage?: {
     outcomes_served?: string[];
     concepts_covered?: string[];
@@ -145,6 +172,30 @@ export interface DeckPlan extends Plan {
   plan_version?: number;
   deck: string;
   title: string;
+  /**
+   * The execution depth this deck was produced at. See `route.ts`.
+   *
+   * It is recorded rather than inferred because it decides the approval gate,
+   * and a gate whose strictness depends on how somebody phrased a request three
+   * days ago is not a gate. The plan says which harness ran, the render prints
+   * it, and a professor holding the .pptx can tell whether anybody agreed to
+   * what is in it.
+   *
+   * Absent means the plan predates modes, and an absent mode requires approval —
+   * every deck built before this field existed went through that gate.
+   */
+  mode?: "fast" | "standard" | "deep";
+  /**
+   * Whether a professor's approval is a condition of rendering this deck.
+   *
+   * `required` is DEEP and anything a professor asked to approve first.
+   * `not_required` is FAST and STANDARD, where the request for a deck *is* the
+   * agreement — they asked for slides, not for a plan to review. `given`
+   * records an approval that has happened.
+   */
+  approval?: "not_required" | "required" | "given";
+  /** Written by `pres plan build`. A hand-edited plan is a plan that will be overwritten. */
+  generated?: boolean;
   /** The outline this was built from, relative to the plan file. */
   outline?: string;
   /** Mirrored from the outline when the deck was built. */
@@ -212,8 +263,40 @@ export const outlinePathFor = (deckPath: string): string =>
 export const isApproved = (record: { status?: string } | null | undefined): boolean =>
   (record?.status ?? DRAFT).toLowerCase() === APPROVED;
 
+/**
+ * Whether this deck may not be rendered until a professor has said so.
+ *
+ * The approval gate was universal and that was wrong in one direction only: it
+ * is exactly right for a deck somebody asked to review before it was written,
+ * and pure obstruction for "make five slides explaining RAG", where the request
+ * was for slides. A professor who has to approve an outline they never asked for
+ * is a professor who learns to type `status: approved` without reading it, which
+ * costs the gate everything it was for.
+ *
+ * So the gate is per-deck and the plan carries the answer. What must never
+ * happen is a *silent* downgrade: a deck whose approval was not required still
+ * says so, in the plan and in the render's output, because a .pptx looks
+ * identical either way.
+ */
+export function approvalRequired(plan: { mode?: string; approval?: string } | null | undefined): boolean {
+  const declared = plan?.approval;
+  if (declared === "required") return true;
+  if (declared === "not_required" || declared === "given") return false;
+  const mode = plan?.mode;
+  // No mode and no approval field: a plan from before either existed. Those
+  // decks were all built through the gate, so they keep it.
+  return !(mode === "fast" || mode === "standard");
+}
+
 export interface Problem {
-  severity: "error" | "warning";
+  /**
+   * `note` is neither wrong nor suspicious — it is a fact about the deck worth
+   * printing. "Built in fast mode, with no outline and no approval gate" is the
+   * case it exists for: reporting it as a warning trains professors to ignore
+   * warnings, and not reporting it at all hides the one thing that distinguishes
+   * a deck nobody reviewed from one somebody did.
+   */
+  severity: "error" | "warning" | "note";
   message: string;
 }
 

@@ -27,6 +27,23 @@ presentation:
   discipline: computer science
   output_mode: hybrid
 
+# The title slide's picture would go here, and the renderer would bleed it down
+# the right of slide 1 with the text column narrowing to suit:
+#
+#   title_slide:
+#     image: MODULE-06-title.jpg
+#     image_alt: An empty lecture theatre seen from the back row.
+#
+# It is commented out because no image ships in this repository, and a plan
+# naming a file that is not beside the deck renders with a warning. An image
+# there is the one picture in a deck allowed to carry no information — and it
+# should be an image rather than a diagram: a mechanism on the title slide shows
+# the payoff before anything has asked the question. See references/typography.md.
+#
+# It sits in the outline rather than the plan because the plan is generated:
+# pointing at a photograph is a decision, and decisions live in the files a
+# professor edits. `pres plan build` carries it across.
+
 arc:
   starts_from: they can split a dataset and report an accuracy (MODULE-05)
   argues: a score measured on data you tuned against is not evidence of anything
@@ -177,14 +194,22 @@ slides:
   # No answers on this slide, in any size. The whitespace and the missing answer
   # are the teaching, and `pres outline check` makes that an error rather than
   # a warning.
+  # Not a `question` slide. That archetype is one large question and the
+  # whitespace around it; this is two written problems the room works through,
+  # which is an `activity` — and an activity carrying two of them is moderate on
+  # purpose, so it says so here rather than tripping the density check.
+  #
+  # The override belongs in this file and nowhere else. `<deck>.plan.yaml` is
+  # generated from this outline and the markdown, so a density set there would be
+  # overwritten the next time `pres plan build` ran.
   - number: 8
     intent: check_understanding
-    archetype: question
+    archetype: activity
     title: Check yourself
     minutes: 12
-    purpose: one question per new concept, and leave time for the answers
-    text_roles: [question]
-    density: sparse
+    purpose: one problem per new concept; leave time for the answers
+    text_roles: [question, instruction]
+    density: moderate
     concepts: [CONCEPT-MODEL-EVALUATION, CONCEPT-OVERFITTING]
 
   # Slide 2's arc, one module on. Identical geometry, so the two read as one

@@ -107,6 +107,13 @@ export function checkDensity(slides: Block[][], plan: DeckPlan): Problem[] {
     // warns when it carries more. Measuring it here says a correct title slide
     // is overfull, which teaches the professor to ignore the warning.
     if (spec.number === 1) continue;
+    // Not a guessed archetype either. `pres plan build` infers one for a deck
+    // with no outline, from the shape of the markdown, so the renderer can set a
+    // question slide as a question — but measuring the slide against a guess
+    // produces a warning about the guess, and a professor who reads one of those
+    // learns to ignore the rest. A declared archetype is a promise; an inferred
+    // one is a convenience.
+    if (spec.archetype_source === "inferred") continue;
     const archetype = spec.archetype ? ARCHETYPES[spec.archetype] : undefined;
     if (!archetype) continue;
     const blocks = slides[spec.number - 1];

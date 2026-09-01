@@ -49,8 +49,32 @@ skipping any host with no A record, and remembers the route that answered in
 `~/.pres/routes/<project-ref>`. That is under your home directory rather than in
 the course workspace on purpose: the workspace is usually somebody else's git
 checkout, and what was discovered is a property of this machine's network rather
-than of the directory you ran the command from. Delete the file to probe again;
-`PRES_HOME` moves it.
+than of the directory you ran the command from. `--fresh-route` probes again;
+`PRES_HOME` moves the file.
+
+The region is not in the DSN and cannot be derived from it, so it is searched
+for — and the searching is bounded, because it used to be the slowest thing in
+this plugin by a wide margin. Hostnames resolve in parallel, each connection gets
+1.5–2.5 seconds rather than ten, the candidates race in batches so the unknown
+region costs one wait rather than fourteen, and the whole probe is capped by
+`PRES_DB_BUDGET_MS`. **`PRES_SUPABASE_REGION` skips the search entirely** and is
+worth setting once you know the answer: it turns roughly six seconds into
+roughly one.
+
+A failure is also remembered, for `PRES_DB_FAIL_TTL_MS` (ten minutes by
+default). A database that did not answer forty seconds ago will not answer now,
+and the alternative is paying the whole probe again on every `pres` command in
+the session. It expires on its own, `--fresh-route` ignores it, and
+`--source database` always retries — a cache that could not be overridden would
+hide a database coming back. The skip appears on the provenance record with its
+age and how to retry, so it is never a silent absence:
+
+```text
+Course read from flat-file: .../course.yaml
+  skipped supabase first — nothing answered 40 s ago, and that is remembered for
+  10 min so every command after the first is instant instead of slow. Retry now
+  with --source database, or --fresh-route.
+```
 
 Note the username on a pooler route: the pooler multiplexes every project in a
 region, so the project ref moves out of the hostname and into the user
@@ -157,8 +181,35 @@ A course with several terms needs `--version`, as either
 is left unset rather than guessed — a deck built against the wrong term is a
 deck with the wrong dates and the wrong room on its first slide.
 
+## Saying which sources are in play
+
+`--source` expresses what you want to happen:
+
+| | |
+| --- | --- |
+| `--source auto` | the three places above, in order. The default |
+| `--source database` | the shared database and nothing else. A failure is an error, and nothing falls back to a local copy — because a course directory last pulled in March produces a deck built from March's outcomes and looks exactly like a correct one |
+| `--source local` | never touch the network. What FAST mode uses, and what you want on a train |
+
+A skipped source is on the provenance record either way. "I asked for local" is
+exactly as easy to forget three days later as "the network was down".
+
 ## Diagnosing
 
 `--only supabase`, `--only course-directory` or `--only flat-file` stops the
 chain at one source, so a failure is reported rather than papered over by the
 next one. `--json` gives the whole normalised course including `provenance`.
+
+`--timing`, or `PRES_TIMING=1`, prints where the seconds went — the DNS sweep,
+each connection attempt, whether a route came from the cache or was probed, and
+the point at which the budget gave up with routes untried:
+
+```text
+course source: 6.4 s
+  database probe: 6.3 s
+    dns: 6 ms (28/28 resolved)
+    configured dsn: 128 ms (did not answer)
+    pooler batch: 4.1 s (28 tried, none answered)
+```
+
+Local only. Nothing is written, aggregated or sent anywhere.

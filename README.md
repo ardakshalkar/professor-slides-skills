@@ -7,14 +7,22 @@
 # Professor Slides Skills
 
 A Claude Code plugin that plans a presentation, writes it, and renders it —
-over a course it finds rather than one it assumes.
+over a course it finds rather than one it assumes, **at the depth the request
+actually needs**.
+
+Ask for five slides explaining RAG and you get five slides. Ask for a new
+lecture on a topic somebody has to sequence carefully, or say the deck goes into
+an accreditation review, and you get the full instructional-design pass:
+research, deck grammar, teaching beats, coverage analysis and your approval
+before a slide is written. Three depths — **FAST**, **STANDARD**, **DEEP** — and
+one cheap command that picks one.
 
 A spin-off of `/make-materials` from the [AINAR Professor
 Exoskeleton](../../ProfessorHarness), which does the same job welded to that
 repository: it needs the `ainar` CLI on PATH, a `courses/` tree in a particular
 layout, `ainar approve` to promote a draft, and `Document` records to carry the
 render contract. A professor who only wants to build a deck cannot use it.
-This installs on its own — three skills, a `pres` CLI, no other repository
+This installs on its own — four skills, a `pres` CLI, no other repository
 required.
 
 ## Install in the Claude desktop app
@@ -66,7 +74,7 @@ marketplace resolves, and you can skip step 2 entirely.
 
 **Step 2 — install it, with buttons.** Start a session, then **+** →
 **Plugins** → **Add plugin**. **professor-slides-skills** is now in the
-browser. Open it, check the **Will install** list — three skills and one
+browser. Open it, check the **Will install** list — four skills and one
 `SessionStart` hook, no MCP server and no agents — and install. **Manage
 plugins** in the same menu enables, disables and uninstalls it later. Ignore
 **Customize** in the sidebar for this: it is the account-level store, and it
@@ -118,7 +126,7 @@ to the scope choice. Then run the `npm install` line from step 3 above.
 
 ## Or as loose skills
 
-Without the marketplace: copy the three folders in
+Without the marketplace: copy the four folders in
 `plugin/professor-slides-skills/skills/` into `~/.claude/skills/`, and
 `npm link` in `node/` to get a global `pres`. Either route, and what each
 buys you, is in [the plugin's README](plugin/professor-slides-skills/README.md).
@@ -199,8 +207,8 @@ hook](plugin/professor-slides-skills/hooks/hooks.json) fails into a misleading
 message about Node. That wants a lookup needing no such variable, and it is not
 written yet.
 
-A second limit is structural rather than a bug: these three skills are a thin
-layer over the `pres` command, so they need a shell. Codex CLI has one.
+A second limit is structural rather than a bug: these skills are a thin layer
+over the `pres` command, so they need a shell. Codex CLI has one.
 
 So **Claude Code is the tested path**, and Codex is plumbed but unproven. If you
 try it, check that a skill can actually read its references before trusting a
@@ -218,8 +226,8 @@ hand would not help, because ChatGPT on the web has no shell to run `pres` in.
 
 ## What's inside
 
-Everything — the three skills, the `pres` CLI, where the course comes from,
-and what is enforced rather than trusted — is in
+Everything — the four skills, the three depths, the `pres` CLI, where the course
+comes from, and what is enforced rather than trusted — is in
 [the plugin's README](plugin/professor-slides-skills/README.md).
 [`RULES.md`](plugin/professor-slides-skills/RULES.md) has the reasoning behind each
 refusal, and [`examples/`](plugin/professor-slides-skills/examples) has one complete
@@ -232,10 +240,12 @@ worked set: an outline, a deck, a figure and the plan that ties them together.
 .agents/plugins/marketplace.json         the same, for Codex (untested)
 plugin/professor-slides-skills/
   .codex-plugin/                         the Codex/ChatGPT manifest (untested)
-  skills/                                the three skills, with their templates
+  skills/make-presentation/              route the request, then run that depth
+  skills/{outline,build,render}-…/        the individual stages, still callable
   beats/                                 29 teaching beats — the planning unit
-  references/                            deck grammars, teaching beats, visual
-                                         grammar, course sources, figures
+  references/                            the reasoning: deck grammars, teaching
+                                         beats, visual grammar, the deep
+                                         workflow, course sources, figures
   preferences/defaults.yaml              what a deck looks like when nobody said
   examples/MODULE-06/                    a complete worked set
   node/                                  the `pres` CLI and its tests
@@ -248,6 +258,14 @@ Planning runs down three taxonomies rather than jumping from a section to a list
 of slides — **deck grammar → teaching beat → slide intent → visual archetype** —
 because a generator that skips that produces *title and three bullets*, fifteen
 times, with every slide individually defensible.
+
+The framework is kept and the overhead is not. Those taxonomies are served as
+compact catalogues by the CLI — `pres grammar`, `pres beats`, `pres archetypes`,
+`pres rules` — so choosing from them costs a few lines rather than seven thousand
+words of reference documents, which remain for the reasoning and for DEEP mode.
+`<deck>.plan.yaml` is generated by `pres plan build` rather than transcribed,
+because every field in it was already stated in the outline or the markdown:
+**judgement is the model's, bookkeeping is the code's.**
 
 ## Requirements
 

@@ -16,15 +16,19 @@ import { dirname, join } from "node:path";
 import { checkContract, parseBlocks, splitSlides, type Block } from "./deck.ts";
 import { checkDensity } from "./density.ts";
 import {
+  approvalRequired,
   creditForFigure,
   isApproved,
   loadPlan,
   outlineBehind,
+  outlinePathFor,
   planPathFor,
   type DeckPlan,
   type Outline,
   type Problem,
 } from "./plan.ts";
+import { compilePlan } from "./compile.ts";
+import { timedSync } from "./timing.ts";
 
 export interface DeckCheck {
   deck: string;
@@ -37,6 +41,7 @@ export interface DeckCheck {
 
 const error = (message: string): Problem => ({ severity: "error", message });
 const warning = (message: string): Problem => ({ severity: "warning", message });
+const note = (message: string): Problem => ({ severity: "note", message });
 
 /**
  * Read a deck and everything that governs it, and say what is wrong.
@@ -65,28 +70,89 @@ export function checkDeck(deckPath: string): DeckCheck {
 
   // --- the approval gate ---------------------------------------------------
   // In the parent this was "the document must not still be in work/". Here the
-  // outline's own status is the only record of a professor's decision, so it is
-  // the gate. A deck rendered from an unapproved outline looks exactly like a
-  // finished one once it is open in PowerPoint.
+  // outline's own status is the record of a professor's decision — but whether
+  // that decision is a *condition* of rendering depends on the deck's mode, and
+  // the plan says which. See `approvalRequired`.
+  //
+  // What does not depend on the mode is saying so. A deck nobody reviewed looks
+  // identical to one somebody did once it is open in PowerPoint, so every path
+  // through here leaves a line in the report.
+  const mode = plan.mode ?? "deep (assumed — the plan names no mode)";
+  const gated = approvalRequired(plan);
+
   if (outline) {
-    if (!isApproved(outline)) {
+    if (isApproved(outline)) {
+      problems.push(note(`the outline behind this deck is approved (mode: ${mode})`));
+    } else if (gated) {
       problems.push(error(
-        `the outline behind this deck is '${outline.status ?? "draft"}', not approved.\n` +
+        `the outline behind this deck is '${outline.status ?? "draft"}', not approved, and this\n` +
+        `  deck's mode (${mode}) requires approval before it renders.\n` +
         "  Nobody has agreed to what is in it. Approval is the professor's to give — they set\n" +
         "  status: approved in the outline, or say so explicitly.",
       ));
+    } else {
+      problems.push(note(
+        `built in ${mode} mode from an outline nobody explicitly approved (status: ` +
+        `${outline.status ?? "draft"}) — which is what ${mode} mode means: the request for a\n` +
+        "  deck was the agreement. Say so when handing the file over.",
+      ));
     }
+  } else if (gated) {
+    problems.push(error(
+      `no outline beside ${planPath}, and this deck's mode (${mode}) requires an approved one.\n` +
+      "  Either write the outline with /outline-presentation, or rebuild the plan in a mode\n" +
+      "  that does not need one: pres plan build DECK.md --mode standard.",
+    ));
   } else {
-    problems.push(warning(
-      `no outline found beside ${planPath}, so nothing records that this deck was agreed to`,
+    problems.push(note(
+      `built in ${mode} mode with no outline, so nothing records a professor's approval —\n` +
+      `  which is what ${mode} mode means. Say so when handing the file over.`,
     ));
   }
 
   // --- the plan is the contract -------------------------------------------
-  // No tolerance and no repair. A plan that no longer matches its deck means
-  // one of the two was edited after the other, and which one is wrong is the
-  // professor's question.
-  for (const mismatch of checkContract(slides, plan)) problems.push(error(mismatch));
+  // No tolerance and no repair *here*. A plan that no longer matched its deck
+  // used to mean an afternoon working out which of the two was edited after the
+  // other; now the plan is generated, so a mismatch means it was not
+  // regenerated, and the message says the command.
+  const mismatches = checkContract(slides, plan);
+  for (const mismatch of mismatches) problems.push(error(mismatch));
+  if (mismatches.length && plan.generated) {
+    problems.push(error(
+      "this plan was generated from the deck, and the deck has changed since. Run\n" +
+      `  pres plan build ${deckPath}\n` +
+      "  — then check that the outline still describes the session. The plan is a projection,\n" +
+      "  so what a mismatch really asks is whether the *deck* is still what was agreed to.",
+    ));
+  }
+
+  // --- the generated plan is stale ----------------------------------------
+  // The contract check compares count, order and title. A generated plan can be
+  // out of date in ways that check cannot see: a figure added to a slide, a
+  // minutes field changed in the outline. Recompiling costs one parse of a file
+  // already read, and a stale plan is how a figure ends up on a slide with
+  // nothing checking its licence.
+  if (plan.generated) {
+    try {
+      const fresh = timedSync("plan freshness", () =>
+        compilePlan(deckPath, readFileSync(deckPath, "utf8"), {
+          outline,
+          ...(outline ? { outlinePath: outlinePathFor(deckPath) } : {}),
+          existing: plan,
+          ...(plan.mode ? { mode: plan.mode } : {}),
+          infer: !outline,
+        }));
+      if (fresh.changed) {
+        problems.push(warning(
+          "the generated plan is out of date — the deck or the outline changed after it was " +
+          `built. Run: pres plan build ${deckPath}`,
+        ));
+      }
+    } catch {
+      // A deck that cannot be recompiled has a real problem, and every other
+      // check in this function is better placed to name it.
+    }
+  }
 
   // --- mathematics that did not convert ------------------------------------
   // A formula is read as authoritative and nobody proofreads the projector, so
@@ -127,7 +193,7 @@ export function checkDeck(deckPath: string): DeckCheck {
   // The plan declares a density band and a set of text roles for every slide,
   // and until this ran nothing compared either against the markdown. A slide
   // could be planned sparse and ship five paragraphs, and the deck built clean.
-  problems.push(...checkDensity(slides, plan));
+  problems.push(...timedSync("density", () => checkDensity(slides, plan)));
 
   // --- figures -------------------------------------------------------------
   const materialsDir = dirname(deckPath);
@@ -184,12 +250,16 @@ export function checkDeck(deckPath: string): DeckCheck {
 export const errorsIn = (problems: Problem[]): Problem[] =>
   problems.filter((problem) => problem.severity === "error");
 
+export const warningsIn = (problems: Problem[]): Problem[] =>
+  problems.filter((problem) => problem.severity === "warning");
+
 /** Checks as a report, most serious first. */
 export function describeProblems(problems: Problem[]): string {
   if (!problems.length) return "No problems found.";
-  const order = { error: 0, warning: 1 } as const;
+  const order = { error: 0, warning: 1, note: 2 } as const;
+  const label = { error: "error  ", warning: "warning", note: "note   " } as const;
   return [...problems]
     .sort((a, b) => order[a.severity] - order[b.severity])
-    .map((problem) => `  ${problem.severity === "error" ? "error  " : "warning"}  ${problem.message}`)
+    .map((problem) => `  ${label[problem.severity]}  ${problem.message}`)
     .join("\n");
 }

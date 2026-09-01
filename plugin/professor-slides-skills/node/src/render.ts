@@ -31,8 +31,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkDeck, errorsIn, describeProblems } from "./check.ts";
 import { CHAR_WIDTH, columnWidths, plain, tableRowHeights, textHeight, unescape, type Block } from "./deck.ts";
-import { creditForFigure, type DeckPlan } from "./plan.ts";
+import { approvalRequired, creditForFigure, type DeckPlan } from "./plan.ts";
 import { generateMissing, missingVisuals, type MissingVisual } from "./draft.ts";
+import { timed, timedSync } from "./timing.ts";
 
 const require = createRequire(import.meta.url);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -850,6 +851,10 @@ const SOFFICE = [
  * slides are.
  */
 export function toPdf(pptx: string, outDir: string): string | null {
+  return timedSync("pdf conversion", () => convertToPdf(pptx, outDir));
+}
+
+function convertToPdf(pptx: string, outDir: string): string | null {
   for (const binary of SOFFICE) {
     const result = spawnSync(binary, ["--headless", "--convert-to", "pdf", "--outdir", outDir, pptx], {
       encoding: "utf8",
@@ -865,8 +870,40 @@ export interface RenderResult {
   pptx: string;
   pdf: string | null;
   warnings: string[];
+  /**
+   * What the file can honestly be said to be.
+   *
+   * A `.pptx` looks identical whether or not anybody agreed to what is in it, so
+   * the one thing a render must never do is hand over a file without saying
+   * which harness produced it. The mode goes into the plan when the plan is
+   * built and comes back out here, for the CLI to print above the "wrote" line.
+   */
+  provenance: string[];
   /** Present for `--draft`: what is still to be drawn. */
   missing?: MissingVisual[];
+}
+
+/**
+ * The lines a professor needs in order to know what they are holding.
+ *
+ * Three cases and they are not interchangeable: an approved deck, a deck built
+ * in a mode where approval was not the gate, and a legacy deck whose plan names
+ * no mode at all. The middle one is the new one, and it is exactly the one that
+ * would be dishonest to leave unsaid.
+ */
+export function describeRenderProvenance(plan: DeckPlan, approved: boolean): string[] {
+  const mode = plan.mode ?? "unstated";
+  if (approved) return [`mode ${mode} — rendered from an approved outline.`];
+  if (approvalRequired(plan)) {
+    // check.ts refuses this, so reaching here means the gate was satisfied some
+    // other way. Worth a line rather than silence.
+    return [`mode ${mode} — approval was required and is recorded on the plan.`];
+  }
+  return [
+    `mode ${mode} — no outline approval stands behind this deck.`,
+    "  That is what this mode means: the request for slides was the agreement. Say so when you",
+    "  hand the file over, and run /make-presentation --mode deep if it needs a reviewed plan.",
+  ];
 }
 
 /**
@@ -880,7 +917,7 @@ export async function renderDeck(
   deckPath: string,
   options: { outDir?: string; pdf?: boolean; draft?: boolean } = {},
 ): Promise<RenderResult> {
-  const checked = checkDeck(deckPath);
+  const checked = timedSync("checks", () => checkDeck(deckPath));
   const failures = errorsIn(checked.problems);
   if (failures.length) {
     throw new Error(
@@ -906,7 +943,7 @@ export async function renderDeck(
     draftWarnings.push(...generated.warnings);
   }
 
-  const { file, warnings } = await build(checked.slides, {
+  const { file, warnings } = await timed("render pptx", () => build(checked.slides, {
     materialsDir: dirname(deckPath),
     outDir,
     name,
@@ -914,7 +951,7 @@ export async function renderDeck(
     title: checked.plan.title ?? base,
     plan: checked.plan,
     ...(draft ? { draft } : {}),
-  });
+  }));
 
   const carried = [
     ...draftWarnings,
@@ -926,6 +963,10 @@ export async function renderDeck(
     pptx: file,
     pdf: options.pdf ? toPdf(file, outDir) : null,
     warnings: carried,
+    provenance: describeRenderProvenance(
+      checked.plan,
+      checked.outline !== null && (checked.outline.status ?? "draft").toLowerCase() === "approved",
+    ),
     ...(draft ? { missing: draft } : {}),
   };
 }

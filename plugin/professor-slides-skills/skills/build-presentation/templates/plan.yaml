@@ -1,82 +1,103 @@
-# The render contract: `<deck>.plan.yaml`, beside the markdown.
+# The render contract, and you do not write it.
 #
-# `pres render` reads this rather than trusting whoever is driving. Three things
-# in it are enforced:
+#     pres plan build <DECK>.md --mode standard
 #
-#   status   an outline still in draft is not rendered, whatever the deck looks
-#            like — a .pptx built from a proposal is a proposal wearing the
-#            clothes of a finished deck
-#   slides   count, order and title must match the markdown; a mismatch means
-#            one of the two was edited after the other, and nothing here
-#            reorders slides to make them agree
-#   figures  a picture claiming a source without an attribution line stops the
-#            render, because a licence is not satisfied by a note in someone's
-#            memory
+# This file is documentation of a *generated* artefact. It used to be a template
+# with slots to fill, and filling them was the single largest piece of pure
+# bookkeeping in this plugin: every field below except the figure credits was
+# already stated in the outline or in the deck markdown, and copying them by hand
+# is how a plan ends up describing the deck as it was two edits ago.
 #
-# Fill every {{ slot }}. Delete nothing except these comments.
+# Where each fact actually lives:
+#
+#   the outline    the session — sequence, minutes, purposes, intents,
+#                  archetypes, densities, text roles, required visuals, the
+#                  title slide's picture, max_slides
+#   the markdown   what is on each slide, including its heading and which
+#                  figures it links
+#   this file      nothing of its own, except a figure's licence metadata, which
+#                  `pres find-image` wrote and nothing else knows. That is
+#                  preserved across regeneration.
+#
+# So: change the outline or the deck, then run `pres plan build` again.
+# `pres check` reports a plan that has fallen behind and names the command.
+#
+# Three things in it are enforced by `pres render`:
+#
+#   mode/approval  a deck built --mode deep, or with --approval required, is not
+#                  rendered until its outline says `approved`. fast and standard
+#                  render without it, because the request for slides was the
+#                  agreement — and every render prints which of those it was,
+#                  since a .pptx looks identical either way
+#   slides         count, order and title must match the markdown; a mismatch
+#                  means the deck changed after the plan was built, and nothing
+#                  here reorders slides to make them agree
+#   figures        a picture claiming a source without an attribution line stops
+#                  the render, because a licence is not satisfied by a note in
+#                  someone's memory
+
+# --- what a generated plan looks like ---------------------------------------
 
 plan_version: 1
-deck: "{{ DECK }}.md"
-title: "{{ session title }}"
+generated: true                     # written by `pres plan build`
+deck: MODULE-06-slides.md
+title: Model evaluation and overfitting
 
-# The outline this was built from, relative to this file. Its `status` is the
-# gate; the copy below is a record of what it said when the deck was built, and
-# the file itself is what is read.
-outline: "{{ DECK }}.outline.yaml"
-status: "{{ mirrored from the outline }}"
+mode: standard                      # fast | standard | deep
+approval: not_required              # not_required | required | given
 
-max_slides: "{{ from the outline }}"
+outline: MODULE-06-slides.outline.yaml
+status: draft                       # mirrored from the outline as it was
+max_slides: 12
 
-# Slide numbers, bottom right. On unless this says false — a student writing
-# "slide 23" in their notes is the reason they are there.
-slide_numbers: true
+# Carried from the outline's `title_slide`, or kept from a hand-written plan that
+# predates that field. The renderer composes slide 1 from it and bleeds the image
+# down the right with the text column narrowing to suit.
+title_slide:
+  image: MODULE-06-title.jpg
+  image_alt: An empty lecture theatre seen from the back row.
 
-# The approved sequence. `minutes` and `purpose` become the speaker notes, which
-# is why they belong here and not on the slide.
+# One entry per slide in the markdown, numbered positionally. `minutes` and
+# `purpose` become the speaker notes; `archetype` tells the renderer to set a
+# question or a big idea large and leave its whitespace alone rather than flowing
+# it like body copy.
 slides:
-  - number: 1
-    title: "{{ exactly the outline's title, and exactly the markdown's heading }}"
-    # Carried across from the outline. The renderer reads it: a question, an
-    # activity or a big idea is set large and left with its whitespace rather
-    # than flowed like body copy.
-    archetype: "{{ from the outline }}"
-    minutes: 8
-    purpose: "{{ what this slide has to do }}"
-  - number: 2
-    title: "{{ … }}"
-    archetype: "{{ … }}"
+  - number: 4
+    title: Three sets, and what each one is for
     minutes: 12
-    purpose: "{{ … }}"
-    # Carried over from the outline. `pres check` warns if the slide has no
-    # picture, so either draw it, record a prompt below, or take this off.
-    required_visual: "{{ what the picture must show }}"
+    purpose: make the tuning/held-out distinction concrete before naming it
+    intent: build_intuition
+    archetype: annotated_object
+    density: sparse
+    text_roles: [label, annotation]
+    required_visual: annotated train / validation / test split
+    visual_anchor: evaluation_split
+    outcomes: [LO-02]
+    concepts: [CONCEPT-MODEL-EVALUATION]
 
-# Every figure the deck links, including the ones you drew.
+  # A deck with no outline — FAST mode — gets an archetype guessed from the shape
+  # of the markdown, marked so the density checks skip it. A warning derived from
+  # a guess is a warning about the guess.
+  - number: 3
+    title: What would you predict?
+    archetype: question
+    archetype_source: inferred
+
+# Every figure the markdown links, with the alt text read off the link. A found
+# or generated picture also carries what makes it lawful, and that survives
+# regeneration.
 figures:
+  MODULE-06-slides-fig-01-split.svg:
+    title: Train, validation and test split
+    alt: >-
+      Training data used to fit the model, validation data used to choose
+      between models, and a test set held back and never touched during tuning.
 
-  # A diagram you drew: title and alt text, nothing else to prove.
-  "{{ DECK }}-fig-01-{{ what }}.svg":
-    title: "{{ what it is }}"
-    alt: "{{ what it asserts, in a sentence }}"
-
-  # An image found through `pres find-image`. The attribution is a condition of
-  # the licence, not a courtesy; without it the render stops.
-  "{{ DECK }}-fig-02-{{ what }}.jpg":
-    title: "{{ what it is }}"
-    alt: "{{ what it shows, in a sentence }}"
+  MODULE-06-slides-fig-05-theatre.jpg:
+    title: An empty lecture theatre
+    alt: Rows of empty seats seen from the back of a lecture theatre.
     image_source:
       provider: openverse
-      source_url: "{{ where it came from }}"
-      license: "{{ CC-BY-4.0 }}"
-      attribution: "{{ the line printed under the picture }}"
-
-  # An illustration the professor generated. Captioned as generated at render
-  # time, for the same reason the alt text says so: a picture behind a lecturer
-  # is read as evidence unless it says otherwise.
-  "{{ DECK }}-fig-03-{{ what }}.png":
-    title: "{{ what it is }}"
-    alt: "{{ what it shows }}. Illustrative; not a measurement."
-    image_prompt:
-      model: "{{ the model the professor ran }}"
-      prompt: "{{ specific about the thing, silent about the truth — no numbers, no axes, no labelled data }}"
-      generated: true
+      source_url: https://example.org/photo/12345
+      license: CC BY 4.0
+      attribution: "Photograph by A. Person, CC BY 4.0"
